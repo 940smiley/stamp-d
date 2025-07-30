@@ -168,11 +168,28 @@ with gr.Blocks() as demo:
             country_copy = gr.Button("📋 Copy Title → Country")
             notes_copy = gr.Button("📋 Copy Title → Notes")
 
-        def copy_to_field(title):
-            return title if title != "No match found" else ""
+        def copy_title_to_country(idx, table, title):
+            idx = int(idx)
+            if 0 <= idx < len(table):
+                table[idx][1] = "" if title == "No match found" else title
+            return table
 
-        country_copy.click(copy_to_field, inputs=suggested_title, outputs=None)
-        notes_copy.click(copy_to_field, inputs=suggested_title, outputs=None)
+        def copy_title_to_notes(idx, table, title):
+            idx = int(idx)
+            if 0 <= idx < len(table):
+                table[idx][4] = "" if title == "No match found" else title
+            return table
+
+        country_copy.click(
+            copy_title_to_country,
+            inputs=[idx_input, preview_table, suggested_title],
+            outputs=preview_table,
+        )
+        notes_copy.click(
+            copy_title_to_notes,
+            inputs=[idx_input, preview_table, suggested_title],
+            outputs=preview_table,
+        )
 
         save_status = gr.Textbox(label="Save Status")
         save_btn = gr.Button("💾 Save All")
