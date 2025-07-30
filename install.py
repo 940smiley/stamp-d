@@ -1,4 +1,5 @@
-import subprocess, sys
+import subprocess
+import sys
 
 modules = [
     "gradio", "sqlalchemy", "psycopg2-binary", "pandas", "pillow", "opencv-python",
