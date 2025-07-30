@@ -2,7 +2,22 @@ function enableLayoutMode(enabled){
   const upload = document.getElementById('upload_results');
   const gallery = document.getElementById('gallery_results');
   const containers=[upload, gallery];
-  containers.forEach(c=>{
+const upload = document.getElementById('upload_results');
+  const gallery = document.getElementById('gallery_results');
+  const containers=[upload, gallery];
+  containers.forEach(container => {
+    if(!container) return;
+    if(enabled){
+      if(!container.sortable){
+        container.sortable=Sortable.create(container,{animation:150,handle:null,onEnd:saveOrder});
+      }
+      Array.from(container.children).forEach(el=>el.classList.add('resizable'));
+    }else{
+      if(container.sortable){container.sortable.destroy();container.sortable=null;}
+      Array.from(container.children).forEach(el=>el.classList.remove('resizable'));
+    }
+  });
+  document.body.classList.toggle('layout-mode', enabled);
     if(!c) return;
     if(enabled){
       if(!c.sortable){
