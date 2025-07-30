@@ -60,7 +60,15 @@ def preview_upload(images):
     os.makedirs(upload_dir, exist_ok=True)
     for img in images:
         # gr.File may pass either a path string or an object with a `.name` attribute
-        img_path = img if isinstance(img, str) else getattr(img, "name", "")
+preview_data = []
+    upload_dir = os.path.join(os.path.dirname(__file__), "uploads")
+    os.makedirs(upload_dir, exist_ok=True)
+    for image_input in images:
+        # gr.File may pass either a path string or an object with a `.name` attribute
+        img_path = image_input if isinstance(image_input, str) else getattr(image_input, "name", "")
+        ext = os.path.splitext(img_path)[1]
+        unique_name = f"{uuid.uuid4()}{ext}"
+        dest_path = os.path.join(upload_dir, unique_name)
         ext = os.path.splitext(img_path)[1]
         unique_name = f"{uuid.uuid4()}{ext}"
 img_path = img if isinstance(img, str) else getattr(img, "name", "")
