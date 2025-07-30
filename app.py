@@ -1,7 +1,5 @@
 import gradio as gr
-import os
-import requests
-import base64
+import os, requests, base64
 from io import BytesIO
 from PIL import Image
 from bs4 import BeautifulSoup
@@ -22,7 +20,7 @@ def search_relevant_sources(image_path):
     colnect_url = f"https://colnect.com/en/stamps/list/{query}"
     hipstamp_url = f"https://www.hipstamp.com/search?keywords={query}&show=store_items"
 
-    # Try scrape top eBay match
+    # Try to scrape top eBay match
     try:
         r = requests.get(ebay_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=8)
         soup = BeautifulSoup(r.text, "html.parser")
@@ -36,27 +34,49 @@ def search_relevant_sources(image_path):
         f'<iframe src="{colnect_url}" width="100%" height="350"></iframe>',
         f'<iframe src="{hipstamp_url}" width="100%" height="350"></iframe>',
         top_title,
-        query
+        query,
     )
 
-# ---------------- Upload + Process ----------------
+# ---------------- Upload + Preview ----------------
 def preview_upload(images):
     preview_data = []
-    for img in images:
-        enhance_and_crop(img)
-        country = classify_image(img)
-        desc = generate_description(type("StampObj", (), {"country": country, "year": "Unknown"}))
-        preview_data.append([img, country, "", "", desc])
+    for img_path in images:
+        # Create thumbnail
+        thumb_html = img_path
+        if os.path.exists(img_path):
+            try:
+                with Image.open(img_path) as img:
+                    img.thumbnail((64, 64))
+                    buf = BytesIO()
+                    img.save(buf, format="PNG")
+                b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+                thumb_html = f"<img src='data:image/png;base64,{b64}' width='50'/>"
+            except:
+                pass
+
+        country = classify_image(img_path)
+        desc = generate_description(
+            type("StampObj", (), {"country": country, "year": "Unknown"})
+        )
+        preview_data.append([thumb_html, img_path, country, "", "", desc])
     return preview_data
 
 def save_upload(preview_table):
     session = Session()
     for row in preview_table:
-        image_path, country, denomination, year, notes = row
+        _, image_path, country, denomination, year, notes = row
+        if not os.path.exists(image_path):
+            continue
         if is_duplicate(image_path, session):
             continue
-        stamp = Stamp(country=country, denomination=denomination, year=year,
-                      notes=notes, image_path=image_path, description=notes)
+        stamp = Stamp(
+            country=country,
+            denomination=denomination,
+            year=year,
+            notes=notes,
+            image_path=image_path,
+            description=notes,
+        )
         session.add(stamp)
     session.commit()
     return "✅ Stamps saved successfully!"
@@ -68,6 +88,7 @@ def load_gallery_data():
     data = []
     for s in stamps:
         # create thumbnail
+        thumb_html = s.image_path
         if os.path.exists(s.image_path):
             try:
                 with Image.open(s.image_path) as img:
@@ -75,25 +96,18 @@ def load_gallery_data():
                     buf = BytesIO()
                     img.save(buf, format="PNG")
                 b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
-                thumb = f"<img src='data:image/png;base64,{b64}' width='50'/>"
+                thumb_html = f"<img src='data:image/png;base64,{b64}' width='50'/>"
             except:
-                thumb = ""
-        else:
-            thumb = ""
-        data.append([thumb, s.id, s.country, s.denomination, s.year, s.notes])
+                pass
+        data.append([thumb_html, s.id, s.country, s.denomination, s.year, s.notes])
     return data
-
-def load_gallery_images():
-    session = Session()
-    stamps = session.query(Stamp).all()
-    return [(s.image_path, f"ID {s.id}: {s.country}") for s in stamps]
 
 def load_stamp_details(stamp_id):
     session = Session()
     s = session.query(Stamp).get(int(stamp_id))
     if s:
         return s.id, s.image_path, s.country, s.denomination, s.year, s.notes
-    return "", "", "", "", "", ""
+    return "", None, "", "", "", ""
 
 def update_stamp_details(stamp_id, country, denomination, year, notes):
     session = Session()
@@ -112,21 +126,17 @@ def export_data():
     return f"📁 Exported to {export_csv()}"
 
 # ---------------- UI ----------------
-with gr.Blocks(elem_id="app-container") as demo:
-    gr.Markdown("# 📬 Stamp’d 9.1 - Clean Merge")
-    gr.HTML("""
-    <link rel='stylesheet' href='layout.css'>
-    <script src='sortable.min.js'></script>
-    <script src='layout.js'></script>
-    """)
+with gr.Blocks(css="#app-container {padding:10px;}") as demo:
+    gr.Markdown("# 📬 Stamp’d 11.0 - Stable Simplified")
 
     # Upload Tab
     with gr.Tab("➕ Upload Stamps"):
         images = gr.File(file_types=["image"], file_count="multiple", label="Upload Stamp Images")
+
         preview_table = gr.Dataframe(
-            headers=["Image Path", "Country", "Denomination", "Year", "Notes"],
-            datatype=["str", "str", "str", "str", "str"],
-            row_count="dynamic"
+            headers=["Thumbnail", "Image Path", "Country", "Denomination", "Year", "Notes"],
+            datatype=["markdown", "str", "str", "str", "str", "str"],
+            row_count="dynamic",
         )
         images.upload(preview_upload, images, preview_table)
 
@@ -140,15 +150,16 @@ with gr.Blocks(elem_id="app-container") as demo:
 
         def trigger_reverse(idx, table):
             if 0 <= int(idx) < len(table):
-                ebay, colnect, hip, title, query = search_relevant_sources(table[int(idx)][0])
+                image_path = table[int(idx)][1]
+                ebay, colnect, hip, title, query = search_relevant_sources(image_path)
                 year, country, denom = parse_title(title)
                 row = list(table[int(idx)])
                 if country:
-                    row[1] = country
+                    row[2] = country
                 if denom:
-                    row[2] = denom
+                    row[3] = denom
                 if year:
-                    row[3] = year
+                    row[4] = year
                 table[int(idx)] = row
                 return (ebay, colnect, hip, title, True, True, True, True, table)
             return ("❌ Invalid index", "", "", "No match", True, False, False, False, table)
@@ -166,14 +177,12 @@ with gr.Blocks(elem_id="app-container") as demo:
 
     # Gallery Tab
     with gr.Tab("📋 Gallery"):
-        with gr.Row():
-            refresh_btn = gr.Button("🔄 Refresh")
-            view_switch = gr.Radio(["Table View", "Images Only"], value="Table View", label="View Mode")
+        refresh_btn = gr.Button("🔄 Refresh")
 
         gallery_table = gr.Dataframe(
             headers=["Image", "ID", "Country", "Denomination", "Year", "Notes"],
             datatype=["markdown", "number", "str", "str", "str", "str"],
-            row_count="dynamic"
+            row_count="dynamic",
         )
 
         stamp_id = gr.Textbox(label="Stamp ID", interactive=False)
@@ -207,27 +216,20 @@ with gr.Blocks(elem_id="app-container") as demo:
         )
 
         update_btn = gr.Button("💾 Update Stamp")
-        update_btn.click(update_stamp_details,
-                         [stamp_id, country_edit, denom_edit, year_edit, notes_edit],
-                         update_status)
-
-        gallery_images = gr.Gallery(show_label=False, columns=5)
-
-        def toggle_views(view_mode):
-            return (gr.update(visible=(view_mode == "Table View")),
-                    gr.update(visible=(view_mode == "Images Only")))
-
-        view_switch.change(toggle_views, view_switch, [gallery_table, gallery_images])
-        refresh_btn.click(load_gallery_data, outputs=gallery_table)
-        refresh_btn.click(load_gallery_images, outputs=gallery_images)
-
-        gallery_table.select(
-            lambda evt: load_stamp_details(evt.value[1]),
-            None,
-            [stamp_id, image_display, country_edit, denom_edit, year_edit, notes_edit]
+        update_btn.click(
+            update_stamp_details,
+            [stamp_id, country_edit, denom_edit, year_edit, notes_edit],
+            update_status,
         )
-        gallery_images.select(
-            lambda label: load_stamp_details(label.split(":")[0].replace("ID ", "")),
+
+        def handle_table_select(evt):
+            if evt and evt.value:
+                return load_stamp_details(evt.value[1])
+            return "", None, "", "", "", ""
+
+        refresh_btn.click(load_gallery_data, outputs=gallery_table)
+        gallery_table.select(
+            handle_table_select,
             None,
             [stamp_id, image_display, country_edit, denom_edit, year_edit, notes_edit]
         )
