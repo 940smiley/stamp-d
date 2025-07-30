@@ -51,7 +51,16 @@ def preview_upload(images):
         img_path = img if isinstance(img, str) else getattr(img, "name", "")
         ext = os.path.splitext(img_path)[1]
         unique_name = f"{uuid.uuid4()}{ext}"
-        dest_path = os.path.join(upload_dir, unique_name)
+img_path = img if isinstance(img, str) else getattr(img, "name", "")
+        ext = os.path.splitext(img_path)[1]
+        unique_name = f"{uuid.uuid4()}{ext}"
+        # Use os.path.normpath and os.path.abspath to sanitize the path
+        dest_path = os.path.abspath(os.path.normpath(os.path.join(upload_dir, unique_name)))
+        if not dest_path.startswith(os.path.abspath(upload_dir)):
+            raise ValueError("Invalid file path")
+        shutil.copy(img_path, dest_path)
+        enhance_and_crop(dest_path)
+        country = classify_image(dest_path)
         shutil.copy(img_path, dest_path)
         enhance_and_crop(dest_path)
         country = classify_image(dest_path)
