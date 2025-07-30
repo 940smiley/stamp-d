@@ -3,6 +3,9 @@ import os
 import requests
 from bs4 import BeautifulSoup
 from db import Session, Stamp
+from PIL import Image
+import base64
+from io import BytesIO
 from image_utils import enhance_and_crop, is_duplicate, classify_image
 from export_utils import export_csv
 from ai_utils import generate_description
@@ -76,7 +79,18 @@ def load_gallery_data():
     stamps = session.query(Stamp).all()
     data = []
     for s in stamps:
-        thumb = s.image_path if os.path.exists(s.image_path) else ""
+        if os.path.exists(s.image_path):
+            try:
+                with Image.open(s.image_path) as img:
+                    img.thumbnail((64, 64))
+                    buf = BytesIO()
+                    img.save(buf, format="PNG")
+                b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+                thumb = f"<img src='data:image/png;base64,{b64}' width='50'/>"
+            except Exception:
+                thumb = ""
+        else:
+            thumb = ""
         data.append([thumb, s.id, s.country, s.denomination, s.year, s.notes])
     return data
 
@@ -210,7 +224,7 @@ with gr.Blocks() as demo:
 
         gallery_table = gr.Dataframe(
             headers=["Image", "ID", "Country", "Denomination", "Year", "Notes"],
-            datatype=["str", "number", "str", "str", "str", "str"],
+            datatype=["markdown", "number", "str", "str", "str", "str"],
             row_count="dynamic",
         )
 
