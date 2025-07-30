@@ -136,6 +136,13 @@ with gr.Blocks() as demo:
         hipstamp_frame = gr.HTML(visible=False)
         suggested_title = gr.Textbox(label="Top eBay Match Title", visible=False)
 
+        # Remove components from their initial position so they can be
+        # rendered later without triggering DuplicateBlockError.
+        ebay_frame.unrender()
+        colnect_frame.unrender()
+        hipstamp_frame.unrender()
+        suggested_title.unrender()
+
         def trigger_reverse(idx, table):
             if 0 <= int(idx) < len(table):
                 ebay, colnect, hip, title, query = search_relevant_sources(table[int(idx)][0])
@@ -203,6 +210,13 @@ with gr.Blocks() as demo:
         colnect_frame_g = gr.HTML(visible=False)
         hipstamp_frame_g = gr.HTML(visible=False)
         suggested_title_g = gr.Textbox(label="Top eBay Match Title", visible=False)
+
+        # Prevent duplicate render errors by removing these components
+        # until they are explicitly rendered later.
+        ebay_frame_g.unrender()
+        colnect_frame_g.unrender()
+        hipstamp_frame_g.unrender()
+        suggested_title_g.unrender()
 
         reverse_btn_gallery.click(
             lambda sid: search_relevant_sources(Session().query(Stamp).get(int(sid)).image_path) if sid else ("❌ No stamp selected", "", "", "", "", ""),
