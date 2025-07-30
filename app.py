@@ -239,7 +239,13 @@ def trigger_reverse(idx, table):
         reverse_btn_gallery.click(
             lambda sid: search_relevant_sources(Session().query(Stamp).get(int(sid)).image_path) if sid else ("❌ No stamp selected", "", "", "", "", ""),
             lambda stamp_id: search_relevant_sources(Session().query(Stamp).get(int(stamp_id)).image_path) if str(stamp_id).isdigit() else ("❌ No stamp selected","","",""),
+suggested_title_g = gr.Textbox(label="Top eBay Match Title", visible=False)
+
+        reverse_btn_gallery.click(
+            lambda sid: search_relevant_sources_safe(sid),
             inputs=stamp_id,
+            outputs=[ebay_frame_g, colnect_frame_g, hipstamp_frame_g, suggested_title_g, gr.Textbox()],
+        )
             outputs=[ebay_frame_g, colnect_frame_g, hipstamp_frame_g, suggested_title_g, gr.Textbox()],
         )
 
