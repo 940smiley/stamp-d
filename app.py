@@ -66,7 +66,17 @@ def preview_upload(images):
     for img in images:
         enhance_and_crop(img)
         country = classify_image(img)
-        desc = generate_description(type("StampObj", (), {"country": country, "year": "Unknown"}))
+def preview_upload(images):
+    preview_data = []
+    for img in images:
+        try:
+            enhance_and_crop(img)
+            country = classify_image(img)
+            desc = generate_description(type("StampObj", (), {"country": country, "year": "Unknown"}))
+            preview_data.append([img, country, "", "", desc])
+        except Exception as e:
+            print(f"Error processing image {img}: {str(e)}")
+    return preview_data
         preview_data.append([img, country, "", "", desc])
     return preview_data
 
