@@ -188,15 +188,15 @@ with gr.Blocks() as demo:
         refresh_btn.click(load_gallery_images, outputs=gallery_images)
 
         gallery_table.select(
-            lambda evt: load_stamp_details(evt.value[1]),
-            None,
-            [stamp_id, image_display, country_edit, denom_edit, year_edit, notes_edit]
+            lambda row: load_stamp_details(row[1]),
+            inputs=gallery_table,
+            outputs=[stamp_id, image_display, country_edit, denom_edit, year_edit, notes_edit]
         )
 
         gallery_images.select(
-            lambda label: load_stamp_details(label.split(":")[0].replace("ID ","")),
-            None,
-            [stamp_id, image_display, country_edit, denom_edit, year_edit, notes_edit]
+            lambda label: load_stamp_details(label.split(":")[0].replace("ID ", "")),
+            inputs=gallery_images,
+            outputs=[stamp_id, image_display, country_edit, denom_edit, year_edit, notes_edit]
         )
 
     # Export Tab
