@@ -1,5 +1,6 @@
 import gradio as gr
 import os, requests
+import shutil, uuid
 from bs4 import BeautifulSoup
 from db import Session, Stamp
 from image_utils import enhance_and_crop, is_duplicate, classify_image
@@ -43,11 +44,17 @@ def search_relevant_sources(image_path):
 # ---------------- Upload + Process ----------------
 def preview_upload(images):
     preview_data = []
+    upload_dir = "uploads"
+    os.makedirs(upload_dir, exist_ok=True)
     for img in images:
-        enhance_and_crop(img)
-        country = classify_image(img)
+        ext = os.path.splitext(img)[1]
+        unique_name = f"{uuid.uuid4()}{ext}"
+        dest_path = os.path.join(upload_dir, unique_name)
+        shutil.copy(img, dest_path)
+        enhance_and_crop(dest_path)
+        country = classify_image(dest_path)
         desc = generate_description(type("StampObj", (), {"country": country, "year": "Unknown"}))
-        preview_data.append([img, country, "", "", desc])
+        preview_data.append([dest_path, country, "", "", desc])
     return preview_data
 
 def save_upload(preview_table):
