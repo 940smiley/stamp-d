@@ -1,0 +1,6 @@
+.layout-mode .resizable {
+  resize: both;
+  overflow: auto;
+  border: 1px dashed #888;
+  padding: 4px;
+}
