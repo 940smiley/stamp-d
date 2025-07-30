@@ -1,12 +1,15 @@
 import gradio as gr
 import os
 import requests
+from urllib.parse import quote_plus
 from bs4 import BeautifulSoup
 from db import Session, Stamp
-from image_utils import enhance_and_crop, is_duplicate, classify_image
+from image_utils import is_duplicate
 from export_utils import export_csv
-from ai_utils import generate_description
 
+# ---------------- Refined Reverse Search ----------------
+def search_relevant_sources(image_path):
+    """Run refined searches for marketplaces and catalog sites."""
 
 # ---------------- Reverse Search ----------------
 def search_relevant_sources(image_path):
@@ -23,13 +26,30 @@ def search_relevant_sources(image_path):
     )
 
     # Try to scrape top eBay match
+
+        return "❌ Image not found.", "", "", ""
+
+    # eBay sold listings
+    query = quote_plus(os.path.basename(image_path).replace("_", " "))
+    ebay_url = f"https://www.ebay.com/sch/i.html?_nkw={query}&LH_Sold=1"
+    colnect_url = f"https://colnect.com/en/stamps/list/{query}"
+    hipstamp_url = f"https://www.hipstamp.com/search?keywords={query}&show=store_items"
+
+    # Optionally scrape eBay sold items for top match title
+
     try:
         r = requests.get(ebay_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=8)
         soup = BeautifulSoup(r.text, "html.parser")
         item = soup.select_one(".s-item__title")
+
         top_title = item.text if item else "No match found"
     except Exception:
         top_title = "No match found"
+
+        top_title = item.text if item else ""
+    except requests.RequestException:
+        top_title = ""
+
 
     return (
         f'<iframe src="{ebay_url}" width="100%" height="350"></iframe>',
@@ -143,7 +163,10 @@ with gr.Blocks() as demo:
             return ("❌ Invalid index", "", "", "No match", True, False, False, False)
 
         reverse_btn_upload.click(
+
             trigger_reverse,
+
+            lambda idx, table: search_relevant_sources(table[int(idx)][0]) if 0 <= int(idx) < len(table) else ("❌ Invalid index","","",""),
             inputs=[idx_input, preview_table],
             outputs=[
                 ebay_frame,
@@ -206,6 +229,7 @@ with gr.Blocks() as demo:
 
         reverse_btn_gallery.click(
             lambda sid: search_relevant_sources(Session().query(Stamp).get(int(sid)).image_path) if sid else ("❌ No stamp selected", "", "", "", "", ""),
+            lambda stamp_id: search_relevant_sources(Session().query(Stamp).get(int(stamp_id)).image_path) if str(stamp_id).isdigit() else ("❌ No stamp selected","","",""),
             inputs=stamp_id,
             outputs=[ebay_frame_g, colnect_frame_g, hipstamp_frame_g, suggested_title_g, gr.Textbox()],
         )
@@ -240,11 +264,16 @@ with gr.Blocks() as demo:
             lambda evt: load_stamp_details(evt.value[1]),
             None,
             [stamp_id, image_display, country_edit, denom_edit, year_edit, notes_edit],
+            lambda row: load_stamp_details(row[1]),
+            inputs=gallery_table,
+            outputs=[stamp_id, image_display, country_edit, denom_edit, year_edit, notes_edit]
         )
         gallery_images.select(
             lambda label: load_stamp_details(label.split(":")[0].replace("ID ", "")),
             None,
             [stamp_id, image_display, country_edit, denom_edit, year_edit, notes_edit],
+            inputs=gallery_images,
+            outputs=[stamp_id, image_display, country_edit, denom_edit, year_edit, notes_edit]
         )
 
         gr.Markdown("### Reverse Search Results")
