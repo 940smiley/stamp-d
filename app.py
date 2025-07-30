@@ -28,7 +28,7 @@ def search_relevant_sources(image_path):
         soup = BeautifulSoup(r.text, "html.parser")
         item = soup.select_one(".s-item__title")
         top_title = item.text if item else "No match found"
-    except Exception:
+    except requests.exceptions.RequestException:
         top_title = "No match found"
 
     return (
