@@ -64,7 +64,25 @@ img_path = img if isinstance(img, str) else getattr(img, "name", "")
         shutil.copy(img_path, dest_path)
         enhance_and_crop(dest_path)
         country = classify_image(dest_path)
-        desc = generate_description(type("StampObj", (), {"country": country, "year": "Unknown"}))
+upload_dir = os.path.join(os.path.dirname(__file__), "uploads")
+    os.makedirs(upload_dir, exist_ok=True)
+    for img in images:
+        try:
+            # gr.File may pass either a path string or an object with a `.name` attribute
+            img_path = img if isinstance(img, str) else getattr(img, "name", "")
+            ext = os.path.splitext(img_path)[1]
+            unique_name = f"{uuid.uuid4()}{ext}"
+            dest_path = os.path.join(upload_dir, unique_name)
+            shutil.copy(img_path, dest_path)
+            enhance_and_crop(dest_path)
+            country = classify_image(dest_path)
+            desc = generate_description(type("StampObj", (), {"country": country, "year": "Unknown"}))
+            preview_data.append([dest_path, country, "", "", desc])
+        except Exception as e:
+            print(f"Error processing image {img_path}: {str(e)}")
+    return preview_data
+
+def save_upload(preview_table):
         preview_data.append([dest_path, country, "", "", desc])
     return preview_data
 
