@@ -1,18 +1,5 @@
 import gradio as gr
 import os, requests
-import gradio as gr
-import os, requests
-from bs4 import BeautifulSoup
-from db import Session, Stamp
-from image_utils import enhance_and_crop, is_duplicate, classify_image
-from export_utils import export_csv
-from ai_utils import generate_description
-
-# from shutil import specific_function  # Import specific function if needed
-# from uuid import uuid4  # Import UUID generation function
-
-# ---------------- Refined Reverse Search ----------------
-def search_relevant_sources(image_path):
 from bs4 import BeautifulSoup
 from db import Session, Stamp
 from image_utils import enhance_and_crop, is_duplicate, classify_image
@@ -56,84 +43,7 @@ def search_relevant_sources(image_path):
 # ---------------- Upload + Process ----------------
 def preview_upload(images):
     preview_data = []
-    upload_dir = os.path.join(os.path.dirname(__file__), "uploads")
-    os.makedirs(upload_dir, exist_ok=True)
-    for img in images:
-        # gr.File may pass either a path string or an object with a `.name` attribute
-preview_data = []
-    upload_dir = os.path.join(os.path.dirname(__file__), "uploads")
-    os.makedirs(upload_dir, exist_ok=True)
-    for image_input in images:
-        # gr.File may pass either a path string or an object with a `.name` attribute
-        img_path = image_input if isinstance(image_input, str) else getattr(image_input, "name", "")
-        ext = os.path.splitext(img_path)[1]
-        unique_name = f"{uuid.uuid4()}{ext}"
-        dest_path = os.path.join(upload_dir, unique_name)
-        ext = os.path.splitext(img_path)[1]
-        unique_name = f"{uuid.uuid4()}{ext}"
-img_path = img if isinstance(img, str) else getattr(img, "name", "")
-        ext = os.path.splitext(img_path)[1]
-        unique_name = f"{uuid.uuid4()}{ext}"
-        # Use os.path.normpath and os.path.abspath to sanitize the path
-        dest_path = os.path.abspath(os.path.normpath(os.path.join(upload_dir, unique_name)))
-        if not dest_path.startswith(os.path.abspath(upload_dir)):
-            raise ValueError("Invalid file path")
-        shutil.copy(img_path, dest_path)
-        enhance_and_crop(dest_path)
-        country = classify_image(dest_path)
-        shutil.copy(img_path, dest_path)
-        enhance_and_crop(dest_path)
-        country = classify_image(dest_path)
-upload_dir = os.path.join(os.path.dirname(__file__), "uploads")
-    os.makedirs(upload_dir, exist_ok=True)
-    for img in images:
-        try:
-            # gr.File may pass either a path string or an object with a `.name` attribute
-            img_path = img if isinstance(img, str) else getattr(img, "name", "")
-            ext = os.path.splitext(img_path)[1]
-            unique_name = f"{uuid.uuid4()}{ext}"
-            dest_path = os.path.join(upload_dir, unique_name)
-            shutil.copy(img_path, dest_path)
-            enhance_and_crop(dest_path)
-            country = classify_image(dest_path)
-            desc = generate_description(type("StampObj", (), {"country": country, "year": "Unknown"}))
-            preview_data.append([dest_path, country, "", "", desc])
-        except Exception as e:
-            print(f"Error processing image {img_path}: {str(e)}")
-    return preview_data
 
-def save_upload(preview_table):
-# ---------------- Upload + Process ----------------
-def preview_upload(images):
-    preview_data = []
-    upload_dir = os.path.join(os.path.dirname(__file__), "uploads")
-    os.makedirs(upload_dir, exist_ok=True)
-    
-    # Import multiprocessing and functools
-    import multiprocessing
-    from functools import partial
-    
-    # Define a worker function to process each image
-    def process_image(img, upload_dir):
-        img_path = img if isinstance(img, str) else getattr(img, "name", "")
-        ext = os.path.splitext(img_path)[1]
-        unique_name = f"{uuid.uuid4()}{ext}"
-        dest_path = os.path.join(upload_dir, unique_name)
-        shutil.copy(img_path, dest_path)
-        enhance_and_crop(dest_path)
-        country = classify_image(dest_path)
-        desc = generate_description(type("StampObj", (), {"country": country, "year": "Unknown"}))
-        return [dest_path, country, "", "", desc]
-    
-    # Use multiprocessing to process images concurrently
-    with multiprocessing.Pool() as pool:
-        preview_data = pool.map(partial(process_image, upload_dir=upload_dir), images)
-    
-    return preview_data
-
-def save_upload(preview_table):
-    session = Session()
-    for row in preview_table:
     return preview_data
 
 def save_upload(preview_table):
