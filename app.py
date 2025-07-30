@@ -83,7 +83,37 @@ upload_dir = os.path.join(os.path.dirname(__file__), "uploads")
     return preview_data
 
 def save_upload(preview_table):
-        preview_data.append([dest_path, country, "", "", desc])
+# ---------------- Upload + Process ----------------
+def preview_upload(images):
+    preview_data = []
+    upload_dir = os.path.join(os.path.dirname(__file__), "uploads")
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    # Import multiprocessing and functools
+    import multiprocessing
+    from functools import partial
+    
+    # Define a worker function to process each image
+    def process_image(img, upload_dir):
+        img_path = img if isinstance(img, str) else getattr(img, "name", "")
+        ext = os.path.splitext(img_path)[1]
+        unique_name = f"{uuid.uuid4()}{ext}"
+        dest_path = os.path.join(upload_dir, unique_name)
+        shutil.copy(img_path, dest_path)
+        enhance_and_crop(dest_path)
+        country = classify_image(dest_path)
+        desc = generate_description(type("StampObj", (), {"country": country, "year": "Unknown"}))
+        return [dest_path, country, "", "", desc]
+    
+    # Use multiprocessing to process images concurrently
+    with multiprocessing.Pool() as pool:
+        preview_data = pool.map(partial(process_image, upload_dir=upload_dir), images)
+    
+    return preview_data
+
+def save_upload(preview_table):
+    session = Session()
+    for row in preview_table:
     return preview_data
 
 def save_upload(preview_table):
