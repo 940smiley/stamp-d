@@ -8,8 +8,8 @@ def get_valuation(stamp_desc):
     prices = []
     for price in soup.select(".s-item__price"):
         try:
-            p = float(price.text.replace("$","").replace(",",""))
+            p = float(price.text.replace("$", "").replace(",", ""))
             prices.append(p)
-        except:
-            pass
+        except ValueError:
+            continue
     return sum(prices)/len(prices) if prices else 0
