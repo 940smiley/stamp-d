@@ -1,6 +1,18 @@
 import gradio as gr
 import os, requests
-import shutil, uuid
+import gradio as gr
+import os, requests
+from bs4 import BeautifulSoup
+from db import Session, Stamp
+from image_utils import enhance_and_crop, is_duplicate, classify_image
+from export_utils import export_csv
+from ai_utils import generate_description
+
+# from shutil import specific_function  # Import specific function from shutil if needed
+# from uuid import uuid4  # Import specific UUID function
+
+# ---------------- Refined Reverse Search ----------------
+def search_relevant_sources(image_path):
 from bs4 import BeautifulSoup
 from db import Session, Stamp
 from image_utils import enhance_and_crop, is_duplicate, classify_image
