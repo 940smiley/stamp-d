@@ -108,7 +108,21 @@ function applySavedOrder(){
   savedGal.forEach(id=>{const el=document.getElementById(id);if(el) gallery.appendChild(el);});
   const mode=localStorage.getItem('layout_mode')==='1';
   const toggle=document.getElementById('layout_toggle');
-  savedGal.forEach(id=>{const el=document.getElementById(id);if(el) gallery.appendChild(el);});
+}
+function applySavedOrder(){
+  const upload=document.getElementById('upload_results');
+  const gallery=document.getElementById('gallery_results');
+  if(upload){
+    const savedUp=JSON.parse(localStorage.getItem('upload_order')||'[]');
+    savedUp.forEach(id=>{const el=document.getElementById(id);if(el) upload.appendChild(el);});
+  }
+  if(gallery){
+    const savedGal=JSON.parse(localStorage.getItem('gallery_order')||'[]');
+    savedGal.forEach(id=>{const el=document.getElementById(id);if(el) gallery.appendChild(el);});
+  }
+  const mode=localStorage.getItem('layout_mode')==='1';
+  const toggle=document.getElementById('layout_toggle');
+  if(toggle){
   const mode=localStorage.getItem('layout_mode')==='1';
   const toggle=document.getElementById('layout_toggle');
   if(toggle){
