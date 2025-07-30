@@ -158,7 +158,16 @@ with gr.Blocks() as demo:
 
         def trigger_reverse(idx, table):
             if 0 <= int(idx) < len(table):
-                ebay, colnect, hip, title, query = search_relevant_sources(table[int(idx)][0])
+def trigger_reverse(idx, table):
+            if 0 <= int(idx) < len(table):
+                try:
+                    ebay, colnect, hip, title, query = search_relevant_sources(table[int(idx)][0])
+                    return (ebay, colnect, hip, title, True, True, True, True)
+                except Exception as e:
+                    return (f"❌ Error: {str(e)}", "", "", "No match", True, False, False, False)
+            return ("❌ Invalid index", "", "", "No match", True, False, False, False)
+
+        reverse_btn_upload.click(
                 return (ebay, colnect, hip, title, True, True, True, True)
             return ("❌ Invalid index", "", "", "No match", True, False, False, False)
 
