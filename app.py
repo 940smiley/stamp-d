@@ -1,6 +1,7 @@
 import gradio as gr
 import os, requests
 import shutil, uuid
+from werkzeug.utils import secure_filename
 from bs4 import BeautifulSoup
 from db import Session, Stamp
 from image_utils import enhance_and_crop, is_duplicate, classify_image
@@ -47,7 +48,8 @@ def preview_upload(images):
     upload_dir = "uploads"
     os.makedirs(upload_dir, exist_ok=True)
     for img in images:
-        ext = os.path.splitext(img)[1]
+        sanitized_name = secure_filename(os.path.basename(img))
+        ext = os.path.splitext(sanitized_name)[1]
         unique_name = f"{uuid.uuid4()}{ext}"
         dest_path = os.path.join(upload_dir, unique_name)
         shutil.copy(img, dest_path)
