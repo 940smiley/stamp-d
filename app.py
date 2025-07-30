@@ -178,7 +178,22 @@ def trigger_reverse(idx, table):
             return ("❌ Invalid index", "", "", "No match", True, False, False, False)
 
         reverse_btn_upload.click(
+hipstamp_frame = gr.HTML(visible=False)
+        suggested_title = gr.Textbox(label="Top eBay Match Title", visible=False)
+
+        # Import functools for caching
+        from functools import lru_cache
+
+        # Implement caching for search_relevant_sources
+        @lru_cache(maxsize=100)
+        def cached_search_relevant_sources(image_path):
+            return search_relevant_sources(image_path)
+
+        def trigger_reverse(idx, table):
+            if 0 <= int(idx) < len(table):
+                ebay, colnect, hip, title, query = cached_search_relevant_sources(table[int(idx)][0])
                 return (ebay, colnect, hip, title, True, True, True, True)
+            return ("❌ Invalid index", "", "", "No match", True, False, False, False)
             return ("❌ Invalid index", "", "", "No match", True, False, False, False)
 
         reverse_btn_upload.click(
