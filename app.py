@@ -7,6 +7,14 @@ from db import Session, Stamp
 from image_utils import enhance_and_crop, is_duplicate, classify_image
 from export_utils import export_csv
 from ai_utils import generate_description
+import logging
+
+logging.basicConfig(
+    filename="app.log",
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 # ---------------- Reverse Search ----------------
 def search_sources(image_path):
@@ -17,9 +25,9 @@ def search_sources(image_path):
     colnect = f"https://colnect.com/en/stamps/list/{query}"
     hip = f"https://www.hipstamp.com/search?keywords={query}&show=store_items"
     return (
-        f"<iframe src='{ebay}' width='100%' height='300'></iframe>",
-        f"<iframe src='{colnect}' width='100%' height='300'></iframe>",
-        f"<iframe src='{hip}' width='100%' height='300'></iframe>"
+        f"<a href='{ebay}' target='_blank'>eBay Results</a>",
+        f"<a href='{colnect}' target='_blank'>Colnect Results</a>",
+        f"<a href='{hip}' target='_blank'>HipStamp Results</a>"
     )
 
 # ---------------- Upload ----------------
@@ -43,22 +51,31 @@ def save_upload(preview_rows):
     if not preview_rows:
         return "❌ No rows to save"
     session = Session()
-    for _, path, country, denom, year, notes in preview_rows:
-        if not os.path.exists(path):
-            continue
-        if is_duplicate(path, session):
-            continue
-        stamp = Stamp(
-            image_path=path,
-            country=country,
-            denomination=denom,
-            year=year,
-            notes=notes,
-            description=notes
-        )
-        session.add(stamp)
-    session.commit()
-    return "✅ Saved to database!"
+    try:
+        for _, path, country, denom, year, notes in preview_rows:
+            if not os.path.exists(path):
+                continue
+            if is_duplicate(path, session):
+                continue
+            stamp = Stamp(
+                image_path=path,
+                country=country,
+                denomination=denom,
+                year=year,
+                notes=notes,
+                description=notes
+            )
+            session.add(stamp)
+        session.commit()
+        return "✅ Saved to database!"
+    except Exception as e:
+        logger.exception("Error saving uploads")
+        session.rollback()
+        return "❌ Error saving to database"
+
+def save_upload_and_refresh(preview_rows):
+    status = save_upload(preview_rows)
+    return status, load_gallery_data()
 
 # ---------------- Gallery ----------------
 def load_gallery_data():
@@ -124,7 +141,6 @@ with gr.Blocks(css="#app-container{padding:10px;}") as demo:
 
         save_status = gr.Textbox(label="Save Status")
         btn_save = gr.Button("💾 Save All")
-        btn_save.click(save_upload, preview_table, save_status)
 
     # --- Gallery Tab ---
     with gr.Tab("📋 Gallery"):
@@ -161,5 +177,8 @@ with gr.Blocks(css="#app-container{padding:10px;}") as demo:
         btn_export = gr.Button("Export CSV")
         export_status = gr.Textbox()
         btn_export.click(export_data, outputs=export_status)
+
+demo.load(load_gallery_data, None, gallery_table)
+btn_save.click(save_upload_and_refresh, preview_table, [save_status, gallery_table])
 
 demo.launch()
