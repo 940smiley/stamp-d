@@ -7,237 +7,191 @@ from db import Session, Stamp
 from image_utils import enhance_and_crop, is_duplicate, classify_image
 from export_utils import export_csv
 from ai_utils import generate_description
-from parsing_utils import parse_title
 
 # ---------------- Reverse Search ----------------
 def search_relevant_sources(image_path):
-    """Run refined searches for eBay sold items, Colnect, HipStamp."""
+    """Return three embedded search iframes for eBay sold, Colnect, HipStamp."""
     if not image_path or not os.path.exists(image_path):
-        return ("❌ Image not found.", "", "", "No match found", "")
+        err = "❌ Image not found."
+        return err, err, err
 
-    query = os.path.basename(image_path).replace("_", " ")
-    ebay_url = f"https://www.ebay.com/sch/i.html?_nkw={query}&LH_Sold=1"
-    colnect_url = f"https://colnect.com/en/stamps/list/{query}"
-    hipstamp_url = f"https://www.hipstamp.com/search?keywords={query}&show=store_items"
-
-    # Try to scrape top eBay match
-    try:
-        r = requests.get(ebay_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=8)
-        soup = BeautifulSoup(r.text, "html.parser")
-        item = soup.select_one(".s-item__title")
-        top_title = item.text if item else "No match found"
-    except requests.exceptions.RequestException:
-        top_title = "No match found"
+    q = os.path.basename(image_path).replace("_", " ")
+    ebay = f"https://www.ebay.com/sch/i.html?_nkw={q}&LH_Sold=1"
+    colnect = f"https://colnect.com/en/stamps/list/{q}"
+    hip = f"https://www.hipstamp.com/search?keywords={q}&show=store_items"
 
     return (
-        f'<iframe src="{ebay_url}" width="100%" height="350"></iframe>',
-        f'<iframe src="{colnect_url}" width="100%" height="350"></iframe>',
-        f'<iframe src="{hipstamp_url}" width="100%" height="350"></iframe>',
-        top_title,
-        query,
+        f'<iframe src="{ebay}" width="100%" height="300"></iframe>',
+        f'<iframe src="{colnect}" width="100%" height="300"></iframe>',
+        f'<iframe src="{hip}" width="100%" height="300"></iframe>'
     )
 
-# ---------------- Upload + Preview ----------------
+# ---------------- Upload / Preview ----------------
 def preview_upload(images):
-    preview_data = []
-    for img_path in images:
-        # Create thumbnail
-        thumb_html = img_path
-        if os.path.exists(img_path):
+    """Generate thumbnail + OCR/AI predictions for preview table."""
+    rows = []
+    for path in images:
+        # thumbnail
+        thumb = path
+        if os.path.exists(path):
             try:
-                with Image.open(img_path) as img:
-                    img.thumbnail((64, 64))
+                with Image.open(path) as img:
+                    img.thumbnail((64,64))
                     buf = BytesIO()
                     img.save(buf, format="PNG")
-                b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
-                thumb_html = f"<img src='data:image/png;base64,{b64}' width='50'/>"
+                b64 = base64.b64encode(buf.getvalue()).decode()
+                thumb = f"<img src='data:image/png;base64,{b64}' width='50'/>"
             except:
                 pass
 
-        country = classify_image(img_path)
-        desc = generate_description(
-            type("StampObj", (), {"country": country, "year": "Unknown"})
-        )
-        preview_data.append([thumb_html, img_path, country, "", "", desc])
-    return preview_data
+        country = classify_image(path)
+        desc = generate_description(type("S",( ),{"country":country,"year":"Unknown"}))
+        # columns: thumbnail, path, country, denom, year, notes
+        rows.append([thumb, path, country, "", "", desc])
+    return rows
 
 def save_upload(preview_table):
-    session = Session()
-    for row in preview_table:
-        _, image_path, country, denomination, year, notes = row
-        if not os.path.exists(image_path):
-            continue
-        if is_duplicate(image_path, session):
-            continue
-        stamp = Stamp(
+    """Persist preview rows into the database."""
+    sess = Session()
+    for thumb, path, country, denom, year, notes in preview_table:
+        if not os.path.exists(path): continue
+        if is_duplicate(path, sess): continue
+        s = Stamp(
             country=country,
-            denomination=denomination,
+            denomination=denom,
             year=year,
             notes=notes,
-            image_path=image_path,
-            description=notes,
+            image_path=path,
+            description=notes
         )
-        session.add(stamp)
-    session.commit()
-    return "✅ Stamps saved successfully!"
+        sess.add(s)
+    sess.commit()
+    return "✅ Saved!"
 
 # ---------------- Gallery ----------------
 def load_gallery_data():
-    session = Session()
-    stamps = session.query(Stamp).all()
-    data = []
-    for s in stamps:
-        # create thumbnail
-        thumb_html = s.image_path
+    """Load all stamps as rows with thumbnails."""
+    sess = Session()
+    out = []
+    for s in sess.query(Stamp).all():
+        thumb = s.image_path
         if os.path.exists(s.image_path):
             try:
                 with Image.open(s.image_path) as img:
-                    img.thumbnail((64, 64))
+                    img.thumbnail((64,64))
                     buf = BytesIO()
                     img.save(buf, format="PNG")
-                b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
-                thumb_html = f"<img src='data:image/png;base64,{b64}' width='50'/>"
+                b64 = base64.b64encode(buf.getvalue()).decode()
+                thumb = f"<img src='data:image/png;base64,{b64}' width='50'/>"
             except:
                 pass
-        data.append([thumb_html, s.id, s.country, s.denomination, s.year, s.notes])
-    return data
+        out.append([thumb, s.id, s.country, s.denomination, s.year, s.notes])
+    return out
 
 def load_stamp_details(stamp_id):
-    session = Session()
-    s = session.query(Stamp).get(int(stamp_id))
-    if s:
-        return s.id, s.image_path, s.country, s.denomination, s.year, s.notes
-    return "", None, "", "", "", ""
+    """Fetch a single stamp’s details for editing."""
+    sess = Session()
+    s = sess.query(Stamp).get(int(stamp_id))
+    if not s:
+        return "", None, "", "", "", ""
+    return s.id, s.image_path, s.country, s.denomination, s.year, s.notes
 
-def update_stamp_details(stamp_id, country, denomination, year, notes):
-    session = Session()
-    s = session.query(Stamp).get(int(stamp_id))
-    if s:
-        s.country = country
-        s.denomination = denomination
-        s.year = year
-        s.notes = notes
-        session.commit()
-        return f"✅ Updated Stamp ID {stamp_id}"
-    return "❌ Stamp not found."
+def update_stamp_details(stamp_id, country, denom, year, notes):
+    """Persist edits to a stamp."""
+    sess = Session()
+    s = sess.query(Stamp).get(int(stamp_id))
+    if not s:
+        return "❌ Not found"
+    s.country, s.denomination, s.year, s.notes = country, denom, year, notes
+    sess.commit()
+    return f"✅ Updated ID {stamp_id}"
 
 # ---------------- Export ----------------
 def export_data():
-    return f"📁 Exported to {export_csv()}"
+    return f"📁 {export_csv()}"
 
 # ---------------- UI ----------------
-with gr.Blocks(css="#app-container {padding:10px;}") as demo:
-    gr.Markdown("# 📬 Stamp’d 11.0 - Stable Simplified")
+with gr.Blocks(css="#app-container{padding:10px;}") as demo:
+    gr.Markdown("# 📬 Stamp’d – Simplified & Stable")
 
-    # Upload Tab
-    with gr.Tab("➕ Upload Stamps"):
-        images = gr.File(file_types=["image"], file_count="multiple", label="Upload Stamp Images")
-
-        preview_table = gr.Dataframe(
-            headers=["Thumbnail", "Image Path", "Country", "Denomination", "Year", "Notes"],
-            datatype=["markdown", "str", "str", "str", "str", "str"],
-            row_count="dynamic",
+    # --- Upload Tab ---
+    with gr.Tab("➕ Upload"):
+        imgs = gr.File(file_types=["image"], file_count="multiple")
+        preview = gr.Dataframe(
+            headers=["Thumb","Path","Country","Denom","Year","Notes"],
+            datatype=["markdown","str","str","str","str","str"],
+            row_count="dynamic"
         )
-        images.upload(preview_upload, images, preview_table)
+        status_save = gr.Textbox(label="Save Status")
 
-        idx_input = gr.Number(label="Row Index (0-based)", precision=0)
-        reverse_btn_upload = gr.Button("🔎 Reverse Image Search (Selected)")
+        # Reverse search frames
+        idx = gr.Number(label="Index (0-based)", precision=0)
+        btn_rev = gr.Button("🔎 Reverse Search")
+        ebay_iframe = gr.HTML()
+        colnect_iframe = gr.HTML()
+        hip_iframe = gr.HTML()
 
-        ebay_frame = gr.HTML(visible=False)
-        colnect_frame = gr.HTML(visible=False)
-        hipstamp_frame = gr.HTML(visible=False)
-        suggested_title = gr.Textbox(label="Top eBay Match Title", visible=False)
-
-        def trigger_reverse(idx, table):
-            if 0 <= int(idx) < len(table):
-                image_path = table[int(idx)][1]
-                ebay, colnect, hip, title, query = search_relevant_sources(image_path)
-                year, country, denom = parse_title(title)
-                row = list(table[int(idx)])
-                if country:
-                    row[2] = country
-                if denom:
-                    row[3] = denom
-                if year:
-                    row[4] = year
-                table[int(idx)] = row
-                return (ebay, colnect, hip, title, True, True, True, True, table)
-            return ("❌ Invalid index", "", "", "No match", True, False, False, False, table)
-
-        reverse_btn_upload.click(
-            trigger_reverse,
-            inputs=[idx_input, preview_table],
-            outputs=[ebay_frame, colnect_frame, hipstamp_frame, suggested_title,
-                     ebay_frame, colnect_frame, hipstamp_frame, suggested_title, preview_table]
+        imgs.upload(preview_upload, imgs, preview)
+        btn_rev.click(
+            lambda i, tbl: search_relevant_sources(tbl[int(i)][1]) if 0<=int(i)<len(tbl) else ("❌","❌","❌"),
+            inputs=[idx, preview],
+            outputs=[ebay_iframe, colnect_iframe, hip_iframe]
         )
 
-        save_status = gr.Textbox(label="Save Status")
-        save_btn = gr.Button("💾 Save All")
-        save_btn.click(save_upload, preview_table, save_status)
+        gr.Row([ebay_iframe, colnect_iframe, hip_iframe])
 
-    # Gallery Tab
+        gr.Row([gr.Button("💾 Save All")
+                .click(save_upload, preview, status_save), status_save])
+
+    # --- Gallery Tab ---
     with gr.Tab("📋 Gallery"):
-        refresh_btn = gr.Button("🔄 Refresh")
-
-        gallery_table = gr.Dataframe(
-            headers=["Image", "ID", "Country", "Denomination", "Year", "Notes"],
-            datatype=["markdown", "number", "str", "str", "str", "str"],
-            row_count="dynamic",
+        btn_ref = gr.Button("🔄 Refresh")
+        table = gr.Dataframe(
+            headers=["Thumb","ID","Country","Denom","Year","Notes"],
+            datatype=["markdown","number","str","str","str","str"],
+            row_count="dynamic"
         )
+        sid = gr.Textbox(label="Stamp ID", interactive=False)
+        img_disp = gr.Image(label="Image")
+        fld_country = gr.Textbox(label="Country")
+        fld_denom = gr.Textbox(label="Denomination")
+        fld_year = gr.Textbox(label="Year")
+        fld_notes = gr.Textbox(label="Notes", lines=3)
+        status_upd = gr.Textbox(label="Update Status")
+        btn_upd = gr.Button("💾 Update")
+        btn_rev_g = gr.Button("🔎 Reverse Search")
+        ebay_iframe_g = gr.HTML()
+        colnect_iframe_g = gr.HTML()
+        hip_iframe_g = gr.HTML()
 
-        stamp_id = gr.Textbox(label="Stamp ID", interactive=False)
-        image_display = gr.Image(label="Stamp Image")
-        country_edit = gr.Textbox(label="Country")
-        denom_edit = gr.Textbox(label="Denomination")
-        year_edit = gr.Textbox(label="Year")
-        notes_edit = gr.Textbox(label="Notes", lines=3)
-        update_status = gr.Textbox(label="Update Status")
-
-        reverse_btn_gallery = gr.Button("🔎 Reverse Image Search (Inline)")
-        ebay_frame_g = gr.HTML(visible=False)
-        colnect_frame_g = gr.HTML(visible=False)
-        hipstamp_frame_g = gr.HTML(visible=False)
-        suggested_title_g = gr.Textbox(label="Top eBay Match Title", visible=False)
-
-        def gallery_reverse_search(sid):
-            if sid:
-                stamp = Session().query(Stamp).get(int(sid))
-                if stamp:
-                    ebay, colnect, hip, title, query = search_relevant_sources(stamp.image_path)
-                    year, country, denom = parse_title(title)
-                    return (ebay, colnect, hip, title, country, denom, year)
-            return ("❌ No stamp selected", "", "", "", "", "", "")
-
-        reverse_btn_gallery.click(
-            gallery_reverse_search,
-            inputs=stamp_id,
-            outputs=[ebay_frame_g, colnect_frame_g, hipstamp_frame_g, suggested_title_g,
-                     country_edit, denom_edit, year_edit]
-        )
-
-        update_btn = gr.Button("💾 Update Stamp")
-        update_btn.click(
-            update_stamp_details,
-            [stamp_id, country_edit, denom_edit, year_edit, notes_edit],
-            update_status,
-        )
-
-        def handle_table_select(evt):
-            if evt and evt.value:
-                return load_stamp_details(evt.value[1])
-            return "", None, "", "", "", ""
-
-        refresh_btn.click(load_gallery_data, outputs=gallery_table)
-        gallery_table.select(
-            handle_table_select,
+        btn_ref.click(load_gallery_data, outputs=table)
+        table.select(
+            lambda evt: load_stamp_details(evt.value[1]) if evt else ("",None,"","","",""),
             None,
-            [stamp_id, image_display, country_edit, denom_edit, year_edit, notes_edit]
+            [sid, img_disp, fld_country, fld_denom, fld_year, fld_notes]
+        )
+        btn_upd.click(
+            update_stamp_details,
+            [sid, fld_country, fld_denom, fld_year, fld_notes],
+            status_upd
+        )
+        btn_rev_g.click(
+            lambda id: search_relevant_sources(Session().query(Stamp).get(int(id)).image_path) if id else ("❌","❌","❌"),
+            inputs=sid,
+            outputs=[ebay_iframe_g, colnect_iframe_g, hip_iframe_g]
         )
 
-    # Export Tab
+        gr.Row([ebay_iframe_g, colnect_iframe_g, hip_iframe_g])
+        gr.Row([btn_ref, table])
+        gr.Row([sid, img_disp])
+        gr.Row([fld_country, fld_denom, fld_year])
+        gr.Row([fld_notes])
+        gr.Row([btn_upd, status_upd, btn_rev_g])
+
+    # --- Export Tab ---
     with gr.Tab("⬇️ Export"):
-        export_btn = gr.Button("Export CSV")
-        export_status = gr.Textbox(label="Export Status")
-        export_btn.click(export_data, outputs=export_status)
+        btn_exp = gr.Button("Export CSV")
+        out_exp = gr.Textbox(label="Export Status")
+        btn_exp.click(export_data, outputs=out_exp)
 
 demo.launch()
