@@ -1,5 +1,5 @@
-from sqlalchemy import create_engine, Column, Integer, String, Date, Text
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy import create_engine, Column, Integer, String, Text
+from sqlalchemy.orm import declarative_base
 
 DATABASE_URL = "postgresql+psycopg2://postgres:NewPassword123!@localhost/stampd"
 Base = declarative_base()

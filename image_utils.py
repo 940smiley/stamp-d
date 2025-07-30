@@ -1,6 +1,8 @@
-import cv2, imagehash
+import cv2
+import imagehash
 from PIL import Image, ImageEnhance
-import numpy as np, os
+import numpy as np
+import os
 from sqlalchemy.orm import Session
 from db import Stamp
 
@@ -13,9 +15,10 @@ def enhance_and_crop(image_path):
     open_cv_img = np.array(img)
     gray = cv2.cvtColor(open_cv_img, cv2.COLOR_BGR2GRAY)
     coords = cv2.findNonZero(255 - gray)
-    x, y, w, h = cv2.boundingRect(coords)
-    cropped = img.crop((x, y, x + w, y + h))
-    cropped.save(image_path)
+    if coords is not None:
+        x, y, w, h = cv2.boundingRect(coords)
+        img = img.crop((x, y, x + w, y + h))
+    img.save(image_path)
     return image_path
 
 def is_duplicate(image_path, db_session: Session):
