@@ -114,34 +114,57 @@ def export_data():
 
 
 # ---------------- UI ----------------
-with gr.Blocks() as demo:
+with gr.Blocks(elem_id="app-container") as demo:
     gr.Markdown("# 📬 Stamp’d 9.0 - Complete Manager")
+    layout_toggle = gr.Checkbox(label="Layout Mode", elem_id="layout_toggle")
+    gr.HTML("""
+    <link rel='stylesheet' href='layout.css'>
+    <script src='sortable.min.js'></script>
+    <script src='layout.js'></script>
+    """)
 
     # Upload Tab
     with gr.Tab("➕ Upload Stamps"):
-        images = gr.File(file_types=["image"], file_count="multiple", label="Upload Stamp Images")
+        with gr.Accordion("Upload Controls", open=True, elem_id="upload_controls", elem_classes="draggable"):
+            images = gr.File(file_types=["image"], file_count="multiple", label="Upload Stamp Images")
 
-        preview_table = gr.Dataframe(
-            headers=["Image Path", "Country", "Denomination", "Year", "Notes"],
-            datatype=["str", "str", "str", "str", "str"],
-            row_count="dynamic",
-        )
-        images.upload(preview_upload, images, preview_table)
+            preview_table = gr.Dataframe(
+                headers=["Image Path", "Country", "Denomination", "Year", "Notes"],
+                datatype=["str", "str", "str", "str", "str"],
+                row_count="dynamic",
+            )
+            images.upload(preview_upload, images, preview_table)
 
-        idx_input = gr.Number(label="Row Index (0-based)", precision=0)
-        reverse_btn_upload = gr.Button("🔎 Reverse Image Search (Selected)")
+            idx_input = gr.Number(label="Row Index (0-based)", precision=0)
+            reverse_btn_upload = gr.Button("🔎 Reverse Image Search (Selected)")
 
-        ebay_frame = gr.HTML(visible=False)
-        colnect_frame = gr.HTML(visible=False)
-        hipstamp_frame = gr.HTML(visible=False)
-        suggested_title = gr.Textbox(label="Top eBay Match Title", visible=False)
+            save_status = gr.Textbox(label="Save Status")
+            save_btn = gr.Button("💾 Save All")
+            save_btn.click(save_upload, preview_table, save_status)
 
-        # Remove components from their initial position so they can be
-        # rendered later without triggering DuplicateBlockError.
-        ebay_frame.unrender()
-        colnect_frame.unrender()
-        hipstamp_frame.unrender()
-        suggested_title.unrender()
+        with gr.Accordion("Reverse Search Results", open=True, elem_id="upload_results", elem_classes="draggable"):
+            gr.Markdown("### Reverse Image Search Results")
+            ebay_frame = gr.HTML(visible=False, elem_id="ebay_frame")
+            colnect_frame = gr.HTML(visible=False, elem_id="colnect_frame")
+            hipstamp_frame = gr.HTML(visible=False, elem_id="hipstamp_frame")
+            suggested_title = gr.Textbox(label="Top eBay Match Title", visible=False, elem_id="suggested_title")
+
+            with gr.Row():
+                country_copy = gr.Button("📋 Copy Title → Country")
+                notes_copy = gr.Button("📋 Copy Title → Notes")
+
+            def copy_to_field(title):
+                return title if title != "No match found" else ""
+
+            country_copy.click(copy_to_field, inputs=suggested_title, outputs=None)
+            notes_copy.click(copy_to_field, inputs=suggested_title, outputs=None)
+
+            # Remove components from their initial position so they can be
+            # rendered later without triggering DuplicateBlockError.
+            ebay_frame.unrender()
+            colnect_frame.unrender()
+            hipstamp_frame.unrender()
+            suggested_title.unrender()
 
         def trigger_reverse(idx, table):
             if 0 <= int(idx) < len(table):
@@ -164,108 +187,86 @@ with gr.Blocks() as demo:
             ],
         )
 
-        with gr.Row():
-            country_copy = gr.Button("📋 Copy Title → Country")
-            notes_copy = gr.Button("📋 Copy Title → Notes")
-
-        def copy_to_field(title):
-            return title if title != "No match found" else ""
-
-        country_copy.click(copy_to_field, inputs=suggested_title, outputs=None)
-        notes_copy.click(copy_to_field, inputs=suggested_title, outputs=None)
-
-        save_status = gr.Textbox(label="Save Status")
-        save_btn = gr.Button("💾 Save All")
-        save_btn.click(save_upload, preview_table, save_status)
-
-        gr.HTML("<hr/>")
-        gr.Markdown("### Reverse Image Search Results")
-        ebay_frame.render()
-        colnect_frame.render()
-        hipstamp_frame.render()
-        suggested_title.render()
 
     # Gallery Tab
     with gr.Tab("📋 Gallery"):
-        with gr.Row():
-            refresh_btn = gr.Button("🔄 Refresh")
-            view_switch = gr.Radio(["Table View", "Images Only"], value="Table View", label="View Mode")
+        with gr.Accordion("Gallery Controls", open=True, elem_id="gallery_controls", elem_classes="draggable"):
+            with gr.Row():
+                refresh_btn = gr.Button("🔄 Refresh")
+                view_switch = gr.Radio(["Table View", "Images Only"], value="Table View", label="View Mode")
 
-        gallery_table = gr.Dataframe(
-            headers=["Image", "ID", "Country", "Denomination", "Year", "Notes"],
-            datatype=["str", "number", "str", "str", "str", "str"],
-            row_count="dynamic",
-        )
-
-        stamp_id = gr.Textbox(label="Stamp ID", interactive=False)
-        image_display = gr.Image(label="Stamp Image")
-        country_edit = gr.Textbox(label="Country")
-        denom_edit = gr.Textbox(label="Denomination")
-        year_edit = gr.Textbox(label="Year")
-        notes_edit = gr.Textbox(label="Notes", lines=3)
-        update_status = gr.Textbox(label="Update Status")
-
-        reverse_btn_gallery = gr.Button("🔎 Reverse Image Search (Inline)")
-        ebay_frame_g = gr.HTML(visible=False)
-        colnect_frame_g = gr.HTML(visible=False)
-        hipstamp_frame_g = gr.HTML(visible=False)
-        suggested_title_g = gr.Textbox(label="Top eBay Match Title", visible=False)
-
-        # Prevent duplicate render errors by removing these components
-        # until they are explicitly rendered later.
-        ebay_frame_g.unrender()
-        colnect_frame_g.unrender()
-        hipstamp_frame_g.unrender()
-        suggested_title_g.unrender()
-
-        reverse_btn_gallery.click(
-            lambda sid: search_relevant_sources(Session().query(Stamp).get(int(sid)).image_path) if sid else ("❌ No stamp selected", "", "", "", "", ""),
-            inputs=stamp_id,
-            outputs=[ebay_frame_g, colnect_frame_g, hipstamp_frame_g, suggested_title_g, gr.Textbox()],
-        )
-
-        with gr.Row():
-            country_copy_g = gr.Button("📋 Copy Title → Country")
-            notes_copy_g = gr.Button("📋 Copy Title → Notes")
-
-        country_copy_g.click(copy_to_field, inputs=suggested_title_g, outputs=country_edit)
-        notes_copy_g.click(copy_to_field, inputs=suggested_title_g, outputs=notes_edit)
-
-        update_btn = gr.Button("💾 Update Stamp")
-        update_btn.click(
-            update_stamp_details,
-            [stamp_id, country_edit, denom_edit, year_edit, notes_edit],
-            update_status,
-        )
-
-        gallery_images = gr.Gallery(show_label=False, columns=5)
-
-        def toggle_views(view_mode):
-            return (
-                gr.update(visible=(view_mode == "Table View")),
-                gr.update(visible=(view_mode == "Images Only")),
+            gallery_table = gr.Dataframe(
+                headers=["Image", "ID", "Country", "Denomination", "Year", "Notes"],
+                datatype=["str", "number", "str", "str", "str", "str"],
+                row_count="dynamic",
             )
 
-        view_switch.change(toggle_views, view_switch, [gallery_table, gallery_images])
-        refresh_btn.click(load_gallery_data, outputs=gallery_table)
-        refresh_btn.click(load_gallery_images, outputs=gallery_images)
+            stamp_id = gr.Textbox(label="Stamp ID", interactive=False)
+            image_display = gr.Image(label="Stamp Image")
+            country_edit = gr.Textbox(label="Country")
+            denom_edit = gr.Textbox(label="Denomination")
+            year_edit = gr.Textbox(label="Year")
+            notes_edit = gr.Textbox(label="Notes", lines=3)
+            update_status = gr.Textbox(label="Update Status")
 
-        gallery_table.select(
-            lambda evt: load_stamp_details(evt.value[1]),
-            None,
-            [stamp_id, image_display, country_edit, denom_edit, year_edit, notes_edit],
-        )
-        gallery_images.select(
-            lambda label: load_stamp_details(label.split(":")[0].replace("ID ", "")),
-            None,
-            [stamp_id, image_display, country_edit, denom_edit, year_edit, notes_edit],
-        )
+            update_btn = gr.Button("💾 Update Stamp")
+            update_btn.click(
+                update_stamp_details,
+                [stamp_id, country_edit, denom_edit, year_edit, notes_edit],
+                update_status,
+            )
 
-        gr.Markdown("### Reverse Search Results")
-        ebay_frame_g.render()
-        colnect_frame_g.render()
-        hipstamp_frame_g.render()
-        suggested_title_g.render()
+            gallery_images = gr.Gallery(show_label=False, columns=5)
+
+            def toggle_views(view_mode):
+                return (
+                    gr.update(visible=(view_mode == "Table View")),
+                    gr.update(visible=(view_mode == "Images Only")),
+                )
+
+            view_switch.change(toggle_views, view_switch, [gallery_table, gallery_images])
+            refresh_btn.click(load_gallery_data, outputs=gallery_table)
+            refresh_btn.click(load_gallery_images, outputs=gallery_images)
+
+            gallery_table.select(
+                lambda evt: load_stamp_details(evt.value[1]),
+                None,
+                [stamp_id, image_display, country_edit, denom_edit, year_edit, notes_edit],
+            )
+            gallery_images.select(
+                lambda label: load_stamp_details(label.split(":")[0].replace("ID ", "")),
+                None,
+                [stamp_id, image_display, country_edit, denom_edit, year_edit, notes_edit],
+            )
+
+        with gr.Accordion("Reverse Search Results", open=True, elem_id="gallery_results", elem_classes="draggable"):
+            gr.Markdown("### Reverse Search Results")
+            reverse_btn_gallery = gr.Button("🔎 Reverse Image Search (Inline)")
+            ebay_frame_g = gr.HTML(visible=False, elem_id="ebay_frame_g")
+            colnect_frame_g = gr.HTML(visible=False, elem_id="colnect_frame_g")
+            hipstamp_frame_g = gr.HTML(visible=False, elem_id="hipstamp_frame_g")
+            suggested_title_g = gr.Textbox(label="Top eBay Match Title", visible=False, elem_id="suggested_title_g")
+
+            with gr.Row():
+                country_copy_g = gr.Button("📋 Copy Title → Country")
+                notes_copy_g = gr.Button("📋 Copy Title → Notes")
+
+            country_copy_g.click(copy_to_field, inputs=suggested_title_g, outputs=country_edit)
+            notes_copy_g.click(copy_to_field, inputs=suggested_title_g, outputs=notes_edit)
+
+            # Prevent duplicate render errors by removing these components
+            # until they are explicitly rendered later.
+            ebay_frame_g.unrender()
+            colnect_frame_g.unrender()
+            hipstamp_frame_g.unrender()
+            suggested_title_g.unrender()
+
+            reverse_btn_gallery.click(
+                lambda sid: search_relevant_sources(Session().query(Stamp).get(int(sid)).image_path) if sid else ("❌ No stamp selected", "", "", "", "", ""),
+                inputs=stamp_id,
+                outputs=[ebay_frame_g, colnect_frame_g, hipstamp_frame_g, suggested_title_g, gr.Textbox()],
+            )
+
 
     # Export Tab
     with gr.Tab("⬇️ Export"):
