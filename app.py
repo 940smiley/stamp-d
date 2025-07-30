@@ -1,15 +1,12 @@
 import gradio as gr
 import os
 import requests
-from urllib.parse import quote_plus
 from bs4 import BeautifulSoup
 from db import Session, Stamp
-from image_utils import is_duplicate
+from image_utils import enhance_and_crop, is_duplicate, classify_image
 from export_utils import export_csv
+from ai_utils import generate_description
 
-# ---------------- Refined Reverse Search ----------------
-def search_relevant_sources(image_path):
-    """Run refined searches for marketplaces and catalog sites."""
 
 # ---------------- Reverse Search ----------------
 def search_relevant_sources(image_path):
@@ -26,30 +23,13 @@ def search_relevant_sources(image_path):
     )
 
     # Try to scrape top eBay match
-
-        return "❌ Image not found.", "", "", ""
-
-    # eBay sold listings
-    query = quote_plus(os.path.basename(image_path).replace("_", " "))
-    ebay_url = f"https://www.ebay.com/sch/i.html?_nkw={query}&LH_Sold=1"
-    colnect_url = f"https://colnect.com/en/stamps/list/{query}"
-    hipstamp_url = f"https://www.hipstamp.com/search?keywords={query}&show=store_items"
-
-    # Optionally scrape eBay sold items for top match title
-
     try:
         r = requests.get(ebay_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=8)
         soup = BeautifulSoup(r.text, "html.parser")
         item = soup.select_one(".s-item__title")
-
         top_title = item.text if item else "No match found"
     except Exception:
         top_title = "No match found"
-
-        top_title = item.text if item else ""
-    except requests.RequestException:
-        top_title = ""
-
 
     return (
         f'<iframe src="{ebay_url}" width="100%" height="350"></iframe>',
@@ -57,46 +37,7 @@ def search_relevant_sources(image_path):
         f'<iframe src="{hipstamp_url}" width="100%" height="350"></iframe>',
         top_title,
         query,
-# ---------------- Reverse Search ----------------
-def construct_search_urls(query):
-    """Construct search URLs for eBay, Colnect, and HipStamp."""
-    ebay_url = f"https://www.ebay.com/sch/i.html?_nkw={query}&LH_Sold=1"
-    colnect_url = f"https://colnect.com/en/stamps/list/{query}"
-    hipstamp_url = f"https://www.hipstamp.com/search?keywords={query}&show=store_items"
-    return ebay_url, colnect_url, hipstamp_url
-
-def scrape_ebay_match(ebay_url):
-    """Scrape the top eBay match."""
-    try:
-        r = requests.get(ebay_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=8)
-        soup = BeautifulSoup(r.text, "html.parser")
-        item = soup.select_one(".s-item__title")
-        return item.text if item else "No match found"
-    except Exception:
-        return "No match found"
-
-def generate_iframes(ebay_url, colnect_url, hipstamp_url):
-    """Generate iframes for search results."""
-    return (
-        f'<iframe src="{ebay_url}" width="100%" height="350"></iframe>',
-        f'<iframe src="{colnect_url}" width="100%" height="350"></iframe>',
-        f'<iframe src="{hipstamp_url}" width="100%" height="350"></iframe>'
     )
-
-def search_relevant_sources(image_path):
-    """Run refined searches for eBay sold items, Colnect, HipStamp."""
-    if not image_path or not os.path.exists(image_path):
-        return ("❌ Image not found.", "", "", "No match found", "")
-
-    query = os.path.basename(image_path).replace("_", " ")
-    ebay_url, colnect_url, hipstamp_url = construct_search_urls(query)
-    top_title = scrape_ebay_match(ebay_url)
-    ebay_frame, colnect_frame, hipstamp_frame = generate_iframes(ebay_url, colnect_url, hipstamp_url)
-
-    return (ebay_frame, colnect_frame, hipstamp_frame, top_title, query)
-
-
-# ---------------- Upload + Process ----------------
 
 
 # ---------------- Upload + Process ----------------
@@ -105,17 +46,7 @@ def preview_upload(images):
     for img in images:
         enhance_and_crop(img)
         country = classify_image(img)
-def preview_upload(images):
-    preview_data = []
-    for img in images:
-        try:
-            enhance_and_crop(img)
-            country = classify_image(img)
-            desc = generate_description(type("StampObj", (), {"country": country, "year": "Unknown"}))
-            preview_data.append([img, country, "", "", desc])
-        except Exception as e:
-            print(f"Error processing image {img}: {str(e)}")
-    return preview_data
+        desc = generate_description(type("StampObj", (), {"country": country, "year": "Unknown"}))
         preview_data.append([img, country, "", "", desc])
     return preview_data
 
@@ -207,39 +138,12 @@ with gr.Blocks() as demo:
 
         def trigger_reverse(idx, table):
             if 0 <= int(idx) < len(table):
-def trigger_reverse(idx, table):
-            if 0 <= int(idx) < len(table):
-                try:
-                    ebay, colnect, hip, title, query = search_relevant_sources(table[int(idx)][0])
-                    return (ebay, colnect, hip, title, True, True, True, True)
-                except Exception as e:
-                    return (f"❌ Error: {str(e)}", "", "", "No match", True, False, False, False)
-            return ("❌ Invalid index", "", "", "No match", True, False, False, False)
-
-        reverse_btn_upload.click(
-hipstamp_frame = gr.HTML(visible=False)
-        suggested_title = gr.Textbox(label="Top eBay Match Title", visible=False)
-
-        # Import functools for caching
-        from functools import lru_cache
-
-        # Implement caching for search_relevant_sources
-        @lru_cache(maxsize=100)
-        def cached_search_relevant_sources(image_path):
-            return search_relevant_sources(image_path)
-
-        def trigger_reverse(idx, table):
-            if 0 <= int(idx) < len(table):
-                ebay, colnect, hip, title, query = cached_search_relevant_sources(table[int(idx)][0])
+                ebay, colnect, hip, title, query = search_relevant_sources(table[int(idx)][0])
                 return (ebay, colnect, hip, title, True, True, True, True)
             return ("❌ Invalid index", "", "", "No match", True, False, False, False)
-            return ("❌ Invalid index", "", "", "No match", True, False, False, False)
 
         reverse_btn_upload.click(
-
             trigger_reverse,
-
-            lambda idx, table: search_relevant_sources(table[int(idx)][0]) if 0 <= int(idx) < len(table) else ("❌ Invalid index","","",""),
             inputs=[idx_input, preview_table],
             outputs=[
                 ebay_frame,
@@ -302,14 +206,7 @@ hipstamp_frame = gr.HTML(visible=False)
 
         reverse_btn_gallery.click(
             lambda sid: search_relevant_sources(Session().query(Stamp).get(int(sid)).image_path) if sid else ("❌ No stamp selected", "", "", "", "", ""),
-            lambda stamp_id: search_relevant_sources(Session().query(Stamp).get(int(stamp_id)).image_path) if str(stamp_id).isdigit() else ("❌ No stamp selected","","",""),
-suggested_title_g = gr.Textbox(label="Top eBay Match Title", visible=False)
-
-        reverse_btn_gallery.click(
-            lambda sid: search_relevant_sources_safe(sid),
             inputs=stamp_id,
-            outputs=[ebay_frame_g, colnect_frame_g, hipstamp_frame_g, suggested_title_g, gr.Textbox()],
-        )
             outputs=[ebay_frame_g, colnect_frame_g, hipstamp_frame_g, suggested_title_g, gr.Textbox()],
         )
 
@@ -343,16 +240,11 @@ suggested_title_g = gr.Textbox(label="Top eBay Match Title", visible=False)
             lambda evt: load_stamp_details(evt.value[1]),
             None,
             [stamp_id, image_display, country_edit, denom_edit, year_edit, notes_edit],
-            lambda row: load_stamp_details(row[1]),
-            inputs=gallery_table,
-            outputs=[stamp_id, image_display, country_edit, denom_edit, year_edit, notes_edit]
         )
         gallery_images.select(
             lambda label: load_stamp_details(label.split(":")[0].replace("ID ", "")),
             None,
             [stamp_id, image_display, country_edit, denom_edit, year_edit, notes_edit],
-            inputs=gallery_images,
-            outputs=[stamp_id, image_display, country_edit, denom_edit, year_edit, notes_edit]
         )
 
         gr.Markdown("### Reverse Search Results")
