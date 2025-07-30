@@ -6,6 +6,7 @@ from db import Session, Stamp
 from image_utils import enhance_and_crop, is_duplicate, classify_image
 from export_utils import export_csv
 from ai_utils import generate_description
+from parsing_utils import parse_title
 
 
 # ---------------- Reverse Search ----------------
@@ -145,9 +146,40 @@ with gr.Blocks() as demo:
 
         def trigger_reverse(idx, table):
             if 0 <= int(idx) < len(table):
-                ebay, colnect, hip, title, query = search_relevant_sources(table[int(idx)][0])
-                return (ebay, colnect, hip, title, True, True, True, True)
-            return ("❌ Invalid index", "", "", "No match", True, False, False, False)
+                ebay, colnect, hip, title, query = search_relevant_sources(
+                    table[int(idx)][0]
+                )
+                year, country, denom = parse_title(title)
+                row = list(table[int(idx)])
+                if country:
+                    row[1] = country
+                if denom:
+                    row[2] = denom
+                if year:
+                    row[3] = year
+                table[int(idx)] = row
+                return (
+                    ebay,
+                    colnect,
+                    hip,
+                    title,
+                    True,
+                    True,
+                    True,
+                    True,
+                    table,
+                )
+            return (
+                "❌ Invalid index",
+                "",
+                "",
+                "No match",
+                True,
+                False,
+                False,
+                False,
+                table,
+            )
 
         reverse_btn_upload.click(
             trigger_reverse,
@@ -161,6 +193,7 @@ with gr.Blocks() as demo:
                 colnect_frame,
                 hipstamp_frame,
                 suggested_title,
+                preview_table,
             ],
         )
 
@@ -218,10 +251,37 @@ with gr.Blocks() as demo:
         hipstamp_frame_g.unrender()
         suggested_title_g.unrender()
 
+        def gallery_reverse_search(sid):
+            if sid:
+                stamp = Session().query(Stamp).get(int(sid))
+                if stamp:
+                    ebay, colnect, hip, title, query = search_relevant_sources(
+                        stamp.image_path
+                    )
+                    year, country, denom = parse_title(title)
+                    return (
+                        ebay,
+                        colnect,
+                        hip,
+                        title,
+                        country,
+                        denom,
+                        year,
+                    )
+            return ("❌ No stamp selected", "", "", "", "", "", "")
+
         reverse_btn_gallery.click(
-            lambda sid: search_relevant_sources(Session().query(Stamp).get(int(sid)).image_path) if sid else ("❌ No stamp selected", "", "", "", "", ""),
+            gallery_reverse_search,
             inputs=stamp_id,
-            outputs=[ebay_frame_g, colnect_frame_g, hipstamp_frame_g, suggested_title_g, gr.Textbox()],
+            outputs=[
+                ebay_frame_g,
+                colnect_frame_g,
+                hipstamp_frame_g,
+                suggested_title_g,
+                country_edit,
+                denom_edit,
+                year_edit,
+            ],
         )
 
         with gr.Row():
