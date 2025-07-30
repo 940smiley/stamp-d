@@ -57,7 +57,46 @@ def search_relevant_sources(image_path):
         f'<iframe src="{hipstamp_url}" width="100%" height="350"></iframe>',
         top_title,
         query,
+# ---------------- Reverse Search ----------------
+def construct_search_urls(query):
+    """Construct search URLs for eBay, Colnect, and HipStamp."""
+    ebay_url = f"https://www.ebay.com/sch/i.html?_nkw={query}&LH_Sold=1"
+    colnect_url = f"https://colnect.com/en/stamps/list/{query}"
+    hipstamp_url = f"https://www.hipstamp.com/search?keywords={query}&show=store_items"
+    return ebay_url, colnect_url, hipstamp_url
+
+def scrape_ebay_match(ebay_url):
+    """Scrape the top eBay match."""
+    try:
+        r = requests.get(ebay_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=8)
+        soup = BeautifulSoup(r.text, "html.parser")
+        item = soup.select_one(".s-item__title")
+        return item.text if item else "No match found"
+    except Exception:
+        return "No match found"
+
+def generate_iframes(ebay_url, colnect_url, hipstamp_url):
+    """Generate iframes for search results."""
+    return (
+        f'<iframe src="{ebay_url}" width="100%" height="350"></iframe>',
+        f'<iframe src="{colnect_url}" width="100%" height="350"></iframe>',
+        f'<iframe src="{hipstamp_url}" width="100%" height="350"></iframe>'
     )
+
+def search_relevant_sources(image_path):
+    """Run refined searches for eBay sold items, Colnect, HipStamp."""
+    if not image_path or not os.path.exists(image_path):
+        return ("❌ Image not found.", "", "", "No match found", "")
+
+    query = os.path.basename(image_path).replace("_", " ")
+    ebay_url, colnect_url, hipstamp_url = construct_search_urls(query)
+    top_title = scrape_ebay_match(ebay_url)
+    ebay_frame, colnect_frame, hipstamp_frame = generate_iframes(ebay_url, colnect_url, hipstamp_url)
+
+    return (ebay_frame, colnect_frame, hipstamp_frame, top_title, query)
+
+
+# ---------------- Upload + Process ----------------
 
 
 # ---------------- Upload + Process ----------------
