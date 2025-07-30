@@ -60,7 +60,14 @@ def preview_upload(images):
 
         ext = os.path.splitext(img_path)[1]
         unique_name = f"{uuid.uuid4()}{ext}"
-        dest_path = os.path.join(upload_dir, unique_name)
+ext = os.path.splitext(img_path)[1]
+        unique_name = f"{uuid.uuid4()}{ext}"
+        # from werkzeug.utils import secure_filename
+        # Use secure_filename to sanitize the filename and prevent path traversal
+        dest_path = os.path.join(upload_dir, secure_filename(unique_name))
+        shutil.copy(img_path, dest_path)
+        enhance_and_crop(dest_path)
+        country = classify_image(dest_path)
         shutil.copy(img_path, dest_path)
         enhance_and_crop(dest_path)
         country = classify_image(dest_path)
