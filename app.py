@@ -128,7 +128,30 @@ def save_upload(preview_rows):
                 country=country,
                 continue
             if is_duplicate(path, session):
-                logger.info(f"Skipping duplicate image: {path}")
+# Import logging module for safe logging practices
+import logging
+
+def save_upload(preview_rows):
+    if not preview_rows:
+        return "❌ No rows to save"
+    session = Session()
+    try:
+        saved_count = 0
+        for row in preview_rows:
+            if len(row) < 6:
+                logger.warning("Skipping malformed row during save_upload: %s", row)
+                continue
+            _, path, country, denom, year, notes = row
+            if not os.path.exists(path):
+                logger.warning("File not found during save: %s", path)
+                continue
+            if is_duplicate(path, session):
+                logging.info("Skipping duplicate image: %s", path)
+                continue
+            stamp = Stamp(
+                image_path=path,
+                country=country,
+                denomination=denom,
                 continue
             stamp = Stamp(
                 image_path=path,
