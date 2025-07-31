@@ -214,7 +214,27 @@ def update_gallery_table(new_table):
     try:
         for row in new_table:
             if len(row) < 6:
-                logger.warning(f"Skipping malformed row during update_gallery_table: {row}")
+try:
+        for row in new_table:
+            if len(row) < 6:
+                # Use string formatting to sanitize input
+                logger.warning("Skipping malformed row during update_gallery_table: %s", str(row))
+                continue
+            thumb, stamp_id, country, denom, year, notes = row
+            try:
+                stamp_id = int(stamp_id)
+            except (ValueError, TypeError):
+                logger.error("Invalid stamp_id encountered during update: %s", str(stamp_id))
+                continue
+
+            s = session.query(Stamp).get(stamp_id)
+            if s:
+                s.country, s.denomination, s.year, s.notes = country, denom, year, notes
+            else:
+                logger.warning("Stamp with ID %s not found for update.", str(stamp_id))
+        session.commit()
+        return "✅ Changes saved inline!"
+    except Exception:
                 continue
             thumb, stamp_id, country, denom, year, notes = row
             try:
