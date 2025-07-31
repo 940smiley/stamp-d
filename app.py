@@ -213,7 +213,32 @@ def update_gallery_table(new_table):
             try:
                 stamp_id = int(stamp_id)
             except (ValueError, TypeError):
-                logger.error(f"Invalid stamp_id encountered during update: {stamp_id}")
+# Import logging and html modules
+import logging
+import html
+
+def update_gallery_table(new_table):
+    """Update database with inline edits."""
+    session = Session()
+    try:
+        for row in new_table:
+            if len(row) < 6:
+                logger.warning(f"Skipping malformed row during update_gallery_table: {row}")
+                continue
+            thumb, stamp_id, country, denom, year, notes = row
+            try:
+                stamp_id = int(stamp_id)
+            except (ValueError, TypeError):
+                # Sanitize user input before logging
+                safe_stamp_id = html.escape(str(stamp_id))
+                logger.error(f"Invalid stamp_id encountered during update: {safe_stamp_id}")
+                continue
+
+            s = session.query(Stamp).get(stamp_id)
+            if s:
+                s.country, s.denomination, s.year, s.notes = country, denom, year, notes
+            else:
+                logger.warning(f"Stamp with ID {stamp_id} not found for update.")
                 continue
 
             s = session.query(Stamp).get(stamp_id)
