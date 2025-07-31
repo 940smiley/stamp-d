@@ -313,7 +313,33 @@ def load_details(selected_row_data):
         return "", None, "", "", "", ""
 
     session = Session()
-    s = session.query(Stamp).get(stamp_id)
+logger.error(f"Invalid stamp ID from selected row: {stamp_id_str}")
+        return "", None, "", "", "", ""
+
+    session = Session()
+    try:
+        s = session.query(Stamp).get(stamp_id)
+        if not s:
+            logger.warning(f"Stamp with ID {stamp_id} not found in database.")
+            return "", None, "", "", "", ""
+        return s.id, s.image_path, s.country, s.denomination, s.year, s.notes
+    except Exception as e:
+        logger.exception(f"Error querying database for stamp ID {stamp_id}")
+        return "", None, "", "", "", ""
+    finally:
+        session.close()
+
+# ---------------- Export ----------------
+def export_data():
+    return f"📁 Exported to {export_csv()}"
+
+# ---------------- UI ----------------
+with gr.Blocks(css="#app-container{padding:10px;}") as demo:
+    gr.Markdown("# 📬 Stamp'd – Inline Editing Version")
+
+    # --- Upload Tab ---
+    with gr.Tab("➕ Upload"):
+        upload_files = gr.File(file_types=["image"], file_count="multiple", label="Upload Stamp Images")
     if not s:
         logger.warning(f"Stamp with ID {stamp_id} not found in database.")
         return "", None, "", "", "", ""
