@@ -20,11 +20,17 @@ logger = logging.getLogger(__name__)
 def search_sources(image_path):
     """Generate marketplace URLs based on an image file path."""
     logger.info(f"Attempting reverse search for image_path: {image_path}")
-    if not image_path or not os.path.exists(image_path):
+    SAFE_IMAGE_DIR = os.path.abspath("images")  # Change "images" to your actual safe directory
+    if not image_path:
         logger.error(f"Invalid image path for search: {image_path}")
         return "❌ No image", "❌ No image", "❌ No image"
+    # Normalize and validate the path
+    normalized_path = os.path.abspath(os.path.normpath(image_path))
+    if not normalized_path.startswith(SAFE_IMAGE_DIR) or not os.path.exists(normalized_path):
+        logger.error(f"Image path not allowed or does not exist: {image_path}")
+        return "❌ No image", "❌ No image", "❌ No image"
 
-    filename_without_ext = os.path.splitext(os.path.basename(image_path))[0]
+    filename_without_ext = os.path.splitext(os.path.basename(normalized_path))[0]
     query = filename_without_ext.replace("_", " ")
 
     ebay = f"https://www.ebay.com/sch/i.html?_nkw={query}&LH_Sold=1"
