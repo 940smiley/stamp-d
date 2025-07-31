@@ -19,7 +19,18 @@ logger = logging.getLogger(__name__)
 # ---------------- Reverse Search ----------------
 def search_sources(image_path):
     """Generate marketplace URLs based on an image file path."""
-    logger.info(f"Attempting reverse search for image_path: {image_path}")
+# import re  # Used for sanitizing input to prevent log injection
+
+def search_sources(image_path):
+    """Generate marketplace URLs based on an image file path."""
+    sanitized_path = re.sub(r'[
+\r]', '', str(image_path))  # Sanitize input
+    logger.info(f"Attempting reverse search for image_path: {sanitized_path}")
+    if not image_path or not os.path.exists(image_path):
+        logger.error(f"Invalid image path for search: {sanitized_path}")
+        return "❌ No image", "❌ No image", "❌ No image"
+
+    filename_without_ext = os.path.splitext(os.path.basename(image_path))[0]
     if not image_path or not os.path.exists(image_path):
 # import html  # Used to escape special characters in user input to prevent log injection
 def search_sources(image_path):
