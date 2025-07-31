@@ -107,7 +107,14 @@ def save_upload(preview_rows):
         saved_count = 0
         for row in preview_rows:
             if len(row) < 6:
-                logger.warning(f"Skipping malformed row during save_upload: {row}")
+saved_count = 0
+        for row in preview_rows:
+            if len(row) < 6:
+                # Use repr() to safely represent the row content in the log
+                logger.warning(f"Skipping malformed row during save_upload: {repr(row)}")
+                continue
+            _, path, country, denom, year, notes = row
+            if not os.path.exists(path):
                 continue
             _, path, country, denom, year, notes = row
             if not os.path.exists(path):
