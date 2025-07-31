@@ -35,7 +35,7 @@ if(!c.sortable){
         Array.from(c.children).forEach(el=>el.classList.remove('resizable'));
       }
     }
-  });
+  };
   document.body.classList.toggle('layout-mode', enabled);
     }else{
       if(c.sortable){c.sortable.destroy();c.sortable=null;}
