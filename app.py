@@ -90,7 +90,15 @@ def preview_upload(images):
             b64 = base64.b64encode(buf.getvalue()).decode()
             thumb_html = f"<img src='data:image/png;base64,{b64}' width='50'/>"
         else:
-            logger.warning(f"File not found during preview: {path}")
+b64 = base64.b64encode(buf.getvalue()).decode()
+            thumb_html = f"<img src='data:image/png;base64,{b64}' width='50'/>"
+        else:
+            # import html
+            sanitized_path = html.escape(path)  # Sanitize the path before logging
+            logger.warning(f"File not found during preview: {sanitized_path}")
+            thumb_html = "File not found"
+
+        country = classify_image(path) if os.path.exists(path) else "Unknown"
             thumb_html = "File not found"
 
         country = classify_image(path) if os.path.exists(path) else "Unknown"
