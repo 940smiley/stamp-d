@@ -21,7 +21,30 @@ def search_sources(image_path):
     """Generate marketplace URLs based on an image file path."""
     logger.info(f"Attempting reverse search for image_path: {image_path}")
     if not image_path or not os.path.exists(image_path):
-        logger.error(f"Invalid image path for search: {image_path}")
+# import html  # Used to escape special characters in user input to prevent log injection
+def search_sources(image_path):
+    """Generate marketplace URLs based on an image file path."""
+    logger.info(f"Attempting reverse search for image_path: {html.escape(image_path)}")
+    if not image_path or not os.path.exists(image_path):
+        logger.error(f"Invalid image path for search: {html.escape(image_path)}")
+        return "❌ No image", "❌ No image", "❌ No image"
+
+    filename_without_ext = os.path.splitext(os.path.basename(image_path))[0]
+    query = filename_without_ext.replace("_", " ")
+
+    ebay = f"https://www.ebay.com/sch/i.html?_nkw={html.escape(query)}&LH_Sold=1"
+    colnect = f"https://colnect.com/en/stamps/list/{html.escape(query)}"
+    hip = f"https://www.hipstamp.com/search?keywords={html.escape(query)}&show=store_items"
+
+    logger.info(f"Generated eBay URL: {html.escape(ebay)}")
+    logger.info(f"Generated Colnect URL: {html.escape(colnect)}")
+    logger.info(f"Generated HipStamp URL: {html.escape(hip)}")
+
+    return (
+        f"<a href='{html.escape(ebay)}' target='_blank'>eBay Results</a>",
+        f"<a href='{html.escape(colnect)}' target='_blank'>Colnect Results</a>",
+        f"<a href='{html.escape(hip)}' target='_blank'>HipStamp Results</a>"
+    )
         return "❌ No image", "❌ No image", "❌ No image"
 
     filename_without_ext = os.path.splitext(os.path.basename(image_path))[0]
