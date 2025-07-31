@@ -94,7 +94,8 @@ def preview_upload(images):
             thumb_html = "File not found"
 
         country = classify_image(path) if os.path.exists(path) else "Unknown"
-        desc_obj = type("S", (), {"country": country, "year": "Unknown"})
+        from types import SimpleNamespace
+        desc_obj = SimpleNamespace(country=country, year="Unknown")
         desc = generate_description(desc_obj)
         rows.append([thumb_html, path, country, "", "", desc])
     return rows
