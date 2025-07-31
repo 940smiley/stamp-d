@@ -77,7 +77,32 @@ def save_upload(preview_rows):
                 continue
             _, path, country, denom, year, notes = row
             if not os.path.exists(path):
-                logger.warning(f"File not found during save: {path}")
+# Import re for regular expression operations
+# Used to sanitize log input by removing newline characters
+import re
+
+def save_upload(preview_rows):
+    if not preview_rows:
+        return "❌ No rows to save"
+    session = Session()
+    try:
+        saved_count = 0
+        for row in preview_rows:
+            if len(row) < 6:
+                logger.warning(f"Skipping malformed row during save_upload: {row}")
+                continue
+            _, path, country, denom, year, notes = row
+            if not os.path.exists(path):
+                sanitized_path = re.sub(r'[
+\r]', '', path)  # Remove newline characters
+                logger.warning(f"File not found during save: {sanitized_path}")
+                continue
+            if is_duplicate(path, session):
+                logger.info(f"Skipping duplicate image: {path}")
+                continue
+            stamp = Stamp(
+                image_path=path,
+                country=country,
                 continue
             if is_duplicate(path, session):
                 logger.info(f"Skipping duplicate image: {path}")
