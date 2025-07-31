@@ -244,9 +244,22 @@ with gr.Blocks(css="#app-container{padding:10px;}") as demo:
 
         # When a row is selected in the gallery, load its details
         gallery_table.select(
-            load_details,
-            inputs=[gallery_table.select(fn=lambda evt: evt.value, inputs=None, outputs=None)], # Pass the entire row data
-            outputs=[stamp_id_display, image_display, _country_hidden, _denomination_hidden, _year_hidden, _notes_hidden]
+            lambda evt, table: (
+                load_details(table[idx])
+                if evt
+                and table
+                and 0 <= (idx := (evt.index if isinstance(evt.index, int) else evt.index[0])) < len(table)
+                else ("", None, "", "", "", "")
+            ),
+            inputs=gallery_table,
+            outputs=[
+                stamp_id_display,
+                image_display,
+                _country_hidden,
+                _denomination_hidden,
+                _year_hidden,
+                _notes_hidden,
+            ],
         )
 
         # When the reverse search button is clicked, use the displayed image path
