@@ -237,9 +237,23 @@ with gr.Blocks(css="#app-container{padding:10px;}") as demo:
             [stamp_id_display, image_display, gr.Textbox(visible=False), gr.Textbox(visible=False), gr.Textbox(visible=False), gr.Textbox(visible=False)]
         )
 
+        # Fix: Use the selected row's image path for reverse search, not the image file shown (which may be None)
+        def get_selected_image_path(table, evt):
+            if not evt or table is None:
+                return None
+            idx = evt.index if isinstance(evt.index, int) else evt.index[0]
+            if idx is None or idx >= len(table):
+                return None
+            row = table[idx]
+            # row[1] is ID, row[0] is thumb, row[1] is ID, row[2] is country, row[3] is denom, row[4] is year, row[5] is notes
+            # But we need the image path, which is not in the table, so we need to fetch it from the database
+            # Use load_details to get the image path
+            details = load_details(row)
+            return details[1] if details and len(details) > 1 else None
+
         btn_rev_gallery.click(
-            lambda img_path: search_sources(img_path) if img_path else ("❌", "❌", "❌"),
-            inputs=image_display,
+            lambda table, evt: search_sources(get_selected_image_path(table, evt)) if get_selected_image_path(table, evt) else ("❌", "❌", "❌"),
+            inputs=[gallery_table, gallery_table.select],
             outputs=[ebay_iframe_g, colnect_iframe_g, hip_iframe_g]
         )
 
