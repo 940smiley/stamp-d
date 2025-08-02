@@ -2,7 +2,6 @@ gradio==4.26.0
 pytesseract
 Pillow
 numpy
-sqlite3
 openpyxl
 watchdog
 requests
@@ -10,3 +9,5 @@ matplotlib
 scikit-image
 jinja2
 ollama
+fpdf2
+SQLAlchemy

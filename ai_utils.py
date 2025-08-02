@@ -1,122 +1,77 @@
-import config
+"""AI helpers for Stamp'd.
+
+The functions in this module provide a thin wrapper around local models
+exposed by [Ollama](https://github.com/ollama/ollama).  The vision
+endpoint is used when available; otherwise, simple heuristic metadata is
+returned.  The goal is to keep the functions resilient so that tests can
+run in environments where the model server is not present.
+"""
+
+from __future__ import annotations
+
+import base64
 import os
-import requests
 import re
-import random
-from db import Session, Stamp
+from typing import Dict
 
-# Optional: integrate Ollama / LM Studio if available
-USE_OLLAMA = True
-OLLAMA_MODEL = "llava-phi3"
-LM_STUDIO_API = "http://127.0.0.1:1234/v1/completions"
+import requests
 
-# -------------------------
-# AI Utility Functions
-# -------------------------
+from config import CONFIG
 
-def query_ollama(prompt: str) -> str:
-    """Query local Ollama model for metadata suggestion."""
-    try:
-        import subprocess, json
-        result = subprocess.run(
-            ["ollama", "run", OLLAMA_MODEL],
-            input=prompt.encode(),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            timeout=30
-        )
-        output = result.stdout.decode().strip()
-        return output if output else "Unknown"
-    except Exception:
-        return None
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
 
-def query_lm_studio(prompt: str) -> str:
-    """Query LM Studio if running locally."""
-    try:
-        r = requests.post(
-            LM_STUDIO_API,
-            headers={"Content-Type": "application/json"},
-            json={"prompt": prompt, "max_tokens": 200},
-            timeout=20
-        )
-        if r.status_code == 200:
-            return r.json().get("choices", [{}])[0].get("text", "").strip()
-        return None
-    except Exception:
-        return None
 
-def generate_metadata(image_path: str) -> dict:
+def _query_ollama_vision(image_path: str, prompt: str) -> str | None:
+    """Send *image_path* to the local Ollama vision endpoint.
+
+    Returns the textual response or ``None`` if the request fails.
     """
-    Generate metadata for a stamp using local AI if available,
-    otherwise fall back to dummy values.
+    try:
+        with open(image_path, "rb") as f:
+            b64 = base64.b64encode(f.read()).decode()
+        payload = {
+            "model": CONFIG.get("ai_model", "phi3"),
+            "prompt": prompt,
+            "images": [b64],
+        }
+        resp = requests.post(f"{OLLAMA_URL}/api/generate", json=payload, timeout=60)
+        if resp.status_code == 200:
+            return resp.json().get("response", "").strip()
+    except Exception:
+        pass
+    return None
+
+
+def generate_metadata(image_path: str) -> Dict[str, str]:
+    """Return a dictionary with AI generated metadata for *image_path*.
+
+    The function attempts to query Ollama.  If the model is unavailable a
+    deterministic fallback is returned so that unit tests can run without
+    external dependencies.
     """
-    prompt = f"Identify the country, year, color, and format of this stamp: {os.path.basename(image_path)}"
-    response = query_ollama(prompt) or query_lm_studio(prompt)
+    prompt = "Identify the stamp's country and denomination"
+    response = _query_ollama_vision(image_path, prompt)
     if not response:
-        # Fallback dummy
+        # Fallback deterministic values based on file name to make tests stable
+        name = os.path.splitext(os.path.basename(image_path))[0]
         return {
+            "name": name,
             "country": "Unknown",
-            "year": "",
-            "format": "Single",
-            "description": f"Stamp from image {os.path.basename(image_path)}"
+            "denomination": "",
+            "description": f"Stamp from {name}",
         }
 
-    # Basic parsing
     metadata = {
+        "name": "",
         "country": "Unknown",
-        "year": "",
-        "format": "Single",
-        "description": response
+        "denomination": "",
+        "description": response,
     }
-    # Simple regex extraction
-    year_match = re.search(r"(18|19|20)\d{2}", response)
-    if year_match:
-        metadata["year"] = year_match.group(0)
+    m = re.search(r"(18|19|20)\d{2}", response)
+    if m:
+        metadata["year"] = m.group(0)
     for word in ["USA", "Germany", "France", "UK", "Canada", "Japan", "Italy"]:
         if word.lower() in response.lower():
             metadata["country"] = word
             break
     return metadata
-
-def auto_fill_blank_fields():
-    """Fill blank metadata fields for all stamps."""
-    session = Session()
-    stamps = session.query(Stamp).all()
-    for s in stamps:
-        if not s.country or not s.year or not s.description:
-            md = generate_metadata(s.image_path)
-            if not s.country:
-                s.country = md["country"]
-            if not s.year:
-                s.year = md["year"]
-            if not s.description:
-                s.description = md["description"]
-    session.commit()
-
-def assign_lots_ai():
-    """Auto-assign lot numbers and optional collection if missing."""
-    session = Session()
-    stamps = session.query(Stamp).all()
-    lot_counter = 1
-    for s in stamps:
-        if not s.lot_number:
-            s.lot_number = f"L{lot_counter:04d}"
-            lot_counter += 1
-        if not s.collection:
-            # Simple heuristic based on country
-            s.collection = s.country or "General Collection"
-    session.commit()
-
-def suggest_price_ai():
-    """
-    Suggest prices based on dummy logic.
-    Real implementation would scrape eBay / HipStamp / Delcampe sold listings.
-    """
-    session = Session()
-    stamps = session.query(Stamp).all()
-    for s in stamps:
-        if not s.price or s.price == 0:
-            # Simple heuristic: random 1-20 USD for demo
-            s.price = round(random.uniform(1, 20), 2)
-    session.commit()
-    return "✅ Price suggestion complete"
