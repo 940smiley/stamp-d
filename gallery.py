@@ -1,18 +1,43 @@
+
 from config import *
-from db import Session, Stamp, Tag
+from sqlalchemy import Table, Column, Integer, String, ForeignKey
+from sqlalchemy.orm import relationship, sessionmaker
+from db import Base, Session, Stamp
+
+# Define Tag model and association table if not present
+tag_association = Table(
+    'stamp_tags', Base.metadata,
+    Column('stamp_id', Integer, ForeignKey('stamps.id')),
+    Column('tag_id', Integer, ForeignKey('tags.id'))
+)
+
+class Tag(Base):
+    __tablename__ = 'tags'
+    id = Column(Integer, primary_key=True)
+    name = Column(String, unique=True)
+    stamps = relationship('Stamp', secondary=tag_association, back_populates='tags')
+
+Stamp.tags = relationship('Tag', secondary=tag_association, back_populates='stamps')
+
 
 def search_stamps(query="", filters={}):
     session = Session()
     q = session.query(Stamp)
     if query:
-        q = q.filter(Stamp.country.ilike(f"%{query}%") | Stamp.notes.ilike(f"%{query}%"))
+        q = q.filter(Stamp.country.ilike(f"%{query}%") | Stamp.description.ilike(f"%{query}%"))
     if filters.get("tags"):
         q = q.join(Stamp.tags).filter(Tag.name.in_(filters["tags"]))
     return q.all()
 
+
 def add_tag(stamp_id, tag_name):
     session = Session()
     stamp = session.query(Stamp).get(stamp_id)
-    tag = session.query(Tag).filter_by(name=tag_name).first() or Tag(name=tag_name)
-    stamp.tags.append(tag)
-    session.commit()
+    tag = session.query(Tag).filter_by(name=tag_name).first()
+    if not tag:
+        tag = Tag(name=tag_name)
+        session.add(tag)
+        session.commit()
+    if tag not in stamp.tags:
+        stamp.tags.append(tag)
+        session.commit()
