@@ -88,7 +88,6 @@ def get_all_stamps() -> List[Stamp]:
         session.close()
 
 
-def get_stamp(stamp_id: int) -> Stamp | None:
 
 
 def insert_many(stamps: Iterable[Dict[str, Any]]) -> None:
