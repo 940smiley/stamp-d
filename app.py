@@ -11,7 +11,13 @@ from __future__ import annotations
 import os
 import shutil
 import logging
-import html
+import os
+import shutil
+import logging
+from html import escape  # Import only the escape function from html module
+from typing import List, Dict, Any
+
+import gradio as gr
 from typing import List, Dict, Any
 
 import gradio as gr
