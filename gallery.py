@@ -1,3 +1,4 @@
+from config import *
 from db import Session, Stamp, Tag
 
 def search_stamps(query="", filters={}):
