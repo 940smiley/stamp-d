@@ -27,7 +27,7 @@ def test_scan_and_save():
     if data:  # may be empty if already scanned
         save_scans(data)
     session = Session()
-    assert session.query(Stamp).count() >= 0
+assert session.query(Stamp).count() > 0
 
 
 def test_gallery_load():
