@@ -284,6 +284,20 @@ with gr.Blocks(title="Stamp'd") as demo:
                 idx = max(0, min(len(ids) - 1, idx))
             else:
                 idx = 0
+inputs=[selected_id, name, country, denom, desc],
+            outputs=[save_btn, edit_btn, save_msg],
+        )
+
+        def navigate(delta):
+            stamps = load_gallery("")
+            ids = [row[0] for row in stamps]
+            if not ids:
+                return [None, None, "", "", "", ""]
+            if selected_id.value in ids:
+                idx = ids.index(selected_id.value) + delta
+                idx = max(0, min(len(ids) - 1, idx))
+            else:
+                idx = 0
             return populate_stamp(ids[idx])
 
         nav_prev.click(lambda: navigate(-1), outputs=[selected_id, image, name, country, denom, desc])
