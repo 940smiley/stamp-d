@@ -1,0 +1,15 @@
+{
+  "ai_model": "phi3",
+  "export_options": {
+    "csv": true,
+    "xlsx": true,
+    "pdf": true,
+    "ebay": false,
+    "hipstamp": false,
+    "colnect": false,
+    "stampworld": false
+  },
+  "gallery": {
+    "enable_search": true
+  }
+}
