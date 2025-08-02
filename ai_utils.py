@@ -27,7 +27,18 @@ def _query_ollama_vision(image_path: str, prompt: str) -> str | None:
     Returns the textual response or ``None`` if the request fails.
     """
     try:
-        with open(image_path, "rb") as f:
+Returns the textual response or ``None`` if the request fails.
+    """
+    try:
+        # import os.path
+        # Use os.path.abspath and os.path.join to create a safe, absolute file path
+        safe_path = os.path.abspath(os.path.join(os.path.dirname(__file__), image_path))
+        if not safe_path.startswith(os.path.dirname(__file__)):
+            return None  # Path is outside the allowed directory
+        with open(safe_path, "rb") as f:
+            b64 = base64.b64encode(f.read()).decode()
+        payload = {
+            "model": CONFIG.get("ai_model", "phi3"),
             b64 = base64.b64encode(f.read()).decode()
         payload = {
             "model": CONFIG.get("ai_model", "phi3"),
