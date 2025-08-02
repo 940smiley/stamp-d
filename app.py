@@ -154,7 +154,10 @@ def save_scans(data: List[Dict[str, Any]]) -> str:
 
 
 def load_gallery(search: str = "") -> List[List[Any]]:
-    return f"Saved {len(data)} stamps"
+# import html  # Used for HTML escaping to prevent XSS attacks
+def save_scans(data: List[Dict[str, Any]]) -> str:
+    insert_many(data)
+    return f"Saved {html.escape(str(len(data)))} stamps"
 
 
 def load_gallery(search: str = "") -> List[List[Any]]:
