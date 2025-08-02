@@ -11,9 +11,11 @@ from __future__ import annotations
 import os
 import shutil
 import logging
+import html
 from typing import List, Dict, Any
 
 import gradio as gr
+from werkzeug.utils import secure_filename
 
 from ai_utils import generate_metadata
 from db_utils import (
@@ -42,47 +44,21 @@ init_db()
 # Helper functions
 # ---------------------------------------------------------------------------
 
-def _scan_paths(paths: List[str], progress: gr.Progress | None = None) -> List[Dict[str, Any]]:
-    """Scan *paths* and return metadata records."""
-    records = []
-    total = len(paths)
-    for idx, path in enumerate(paths, 1):
-        try:
-            md = generate_metadata(path)
-        except Exception as exc:  # pragma: no cover - defensive
-try:
-            md = generate_metadata(path)
-        except Exception as exc:  # pragma: no cover - defensive
-            # import html
-            # Sanitize user input before logging to prevent log injection
-            logging.error("scan failed for %s: %s", html.escape(path), html.escape(str(exc)))
-            md = {"name": "", "country": "", "denomination": "", "description": ""}
-        record = {
-            "image_path": path,
-            md = {"name": "", "country": "", "denomination": "", "description": ""}
-        record = {
-            "image_path": path,
-            "stamp_name": md.get("name", ""),
-            "country": md.get("country", ""),
-            "denomination": md.get("denomination", ""),
-            "description": md.get("description", ""),
-        }
-        records.append(record)
-        if progress is not None:
-            try:
-                progress(idx / total)
-# Import logging module to enable exception logging
-import logging
+
 
 def _scan_paths(paths: List[str], progress: gr.Progress | None = None) -> List[Dict[str, Any]]:
     """Scan *paths* and return metadata records."""
-    records = []
+    records: List[Dict[str, Any]] = []
     total = len(paths)
     for idx, path in enumerate(paths, 1):
         try:
             md = generate_metadata(path)
         except Exception as exc:  # pragma: no cover - defensive
-            logging.error("scan failed for %s: %s", path, exc)
+            logging.error(
+                "scan failed for %s: %s",
+                html.escape(path),
+                html.escape(str(exc)),
+            )
             md = {"name": "", "country": "", "denomination": "", "description": ""}
         record = {
             "image_path": path,
@@ -95,20 +71,10 @@ def _scan_paths(paths: List[str], progress: gr.Progress | None = None) -> List[D
         if progress is not None:
             try:
                 progress(idx / total)
-            except Exception as e:
+            except Exception as e:  # pragma: no cover - defensive
                 logging.exception("Error updating progress: %s", e, exc_info=True)
     return records
-                pass
-    return records
 
-
-def upload_and_scan(files: List[Any], progress: gr.Progress | None = None) -> List[Dict[str, Any]]:
-    """Handle uploaded files and return scanned metadata."""
-    paths = []
-    for f in files:
-# Import statements for secure file handling
-import os
-from werkzeug.utils import secure_filename  # Provides secure_filename() to sanitize filenames
 
 def upload_and_scan(files: List[Any], progress: gr.Progress | None = None) -> List[Dict[str, Any]]:
     """Handle uploaded files and return scanned metadata."""
@@ -117,17 +83,6 @@ def upload_and_scan(files: List[Any], progress: gr.Progress | None = None) -> Li
         safe_filename = secure_filename(os.path.basename(f.name))
         dest = os.path.join(IMAGES_DIR, safe_filename)
         shutil.copy(f.name, dest)
-        paths.append(dest)
-    return _scan_paths(paths, progress)
-paths = []
-    for f in files:
-        dest = os.path.join(IMAGES_DIR, os.path.basename(f.name))
-        try:
-            shutil.copy(f.name, dest)
-            paths.append(dest)
-        except (IOError, OSError) as e:
-            logging.error(f"Error copying file {f.name}: {str(e)}")
-    return _scan_paths(paths, progress)
         paths.append(dest)
     return _scan_paths(paths, progress)
 
@@ -143,7 +98,8 @@ def scan_and_sync_folder(progress: gr.Progress | None = None) -> List[Dict[str, 
     return _scan_paths(paths, progress)
 
 
-def save_scans(data: List[Dict[str, Any]]) -> str:
+
+
 def save_scans(data: List[Dict[str, Any]]) -> str:
     try:
         insert_many(data)
@@ -154,13 +110,6 @@ def save_scans(data: List[Dict[str, Any]]) -> str:
 
 
 def load_gallery(search: str = "") -> List[List[Any]]:
-# import html  # Used for HTML escaping to prevent XSS attacks
-def save_scans(data: List[Dict[str, Any]]) -> str:
-    insert_many(data)
-    return f"Saved {html.escape(str(len(data)))} stamps"
-
-
-def load_gallery(search: str = "") -> List[List[Any]]:
     stamps = get_all_stamps()
     rows = []
     for s in stamps:
@@ -168,7 +117,6 @@ def load_gallery(search: str = "") -> List[List[Any]]:
             continue
         rows.append([s.id, s.image_path, s.stamp_name, s.country, s.denomination])
     return rows
-
 
 def populate_stamp(stamp_id: int) -> List[Any]:
     s = get_stamp(stamp_id)
@@ -276,17 +224,6 @@ with gr.Blocks(title="Stamp'd") as demo:
             outputs=[save_btn, edit_btn, save_msg],
         )
 
-        def navigate(delta):
-            stamps = load_gallery("")
-            ids = [row[0] for row in stamps]
-            if selected_id.value in ids:
-                idx = ids.index(selected_id.value) + delta
-                idx = max(0, min(len(ids) - 1, idx))
-            else:
-                idx = 0
-inputs=[selected_id, name, country, denom, desc],
-            outputs=[save_btn, edit_btn, save_msg],
-        )
 
         def navigate(delta):
             stamps = load_gallery("")
