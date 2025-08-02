@@ -144,7 +144,16 @@ def scan_and_sync_folder(progress: gr.Progress | None = None) -> List[Dict[str, 
 
 
 def save_scans(data: List[Dict[str, Any]]) -> str:
-    insert_many(data)
+def save_scans(data: List[Dict[str, Any]]) -> str:
+    try:
+        insert_many(data)
+        return f"Saved {len(data)} stamps"
+    except Exception as e:
+        logging.error(f"Error saving scans: {str(e)}")
+        return f"Error saving scans: {str(e)}"
+
+
+def load_gallery(search: str = "") -> List[List[Any]]:
     return f"Saved {len(data)} stamps"
 
 
