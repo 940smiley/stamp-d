@@ -52,7 +52,43 @@ def insert_stamp(data: Dict[str, Any]) -> int:
     stamp = Stamp(**data)
     session.add(stamp)
     session.commit()
-    return stamp.id
+def insert_stamp(data: Dict[str, Any]) -> int:
+    session = Session()
+    try:
+        stamp = Stamp(**data)
+        session.add(stamp)
+        session.commit()
+        return stamp.id
+    except Exception as e:
+        session.rollback()
+        raise e
+    finally:
+        session.close()
+
+
+def insert_many(stamps: Iterable[Dict[str, Any]]) -> None:
+    session = Session()
+    try:
+        session.add_all([Stamp(**s) for s in stamps])
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        raise e
+    finally:
+        session.close()
+
+
+def get_all_stamps() -> List[Stamp]:
+    session = Session()
+    try:
+        return session.query(Stamp).all()
+    except Exception as e:
+        raise e
+    finally:
+        session.close()
+
+
+def get_stamp(stamp_id: int) -> Stamp | None:
 
 
 def insert_many(stamps: Iterable[Dict[str, Any]]) -> None:
