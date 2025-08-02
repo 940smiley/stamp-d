@@ -49,10 +49,16 @@ def save_previews(preview_list):
 
 def reverse_image_lookup(image_path):
     try:
-        return search_sources(image_path)
+        results = search_sources(image_path)
+        # Format results as HTML list
+        html = "<ul>"
+        for r in results:
+            html += f"<li>{r}</li>"
+        html += "</ul>"
+        return html
     except Exception as e:
         logging.error(f"Reverse search error: {str(e)}")
-        return ["❌"] * 4
+        return "<ul><li>❌ Error during reverse search</li></ul>"
 
 def refresh_gallery():
     return get_all_stamps()
@@ -102,7 +108,8 @@ with gr.Blocks(title="Stamp’d") as demo:
         reverse_btn = gr.Button("🔍 Reverse Image Search")
         reverse_result = gr.HTML()
 
-        reverse_btn.click(fn=reverse_image_lookup, inputs=[image], outputs=[reverse_result])
+        # Use image path from selected_id (stamp details)
+        reverse_btn.click(fn=reverse_image_lookup, inputs=[image], outputs=reverse_result)
 
     with gr.Tab("📤 Export & Logs"):
         export_btn = gr.Button("Export CSV")
