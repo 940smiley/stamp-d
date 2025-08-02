@@ -106,7 +106,19 @@ def upload_and_scan(files: List[Any], progress: gr.Progress | None = None) -> Li
     """Handle uploaded files and return scanned metadata."""
     paths = []
     for f in files:
-        dest = os.path.join(IMAGES_DIR, os.path.basename(f.name))
+# Import statements for secure file handling
+import os
+from werkzeug.utils import secure_filename  # Provides secure_filename() to sanitize filenames
+
+def upload_and_scan(files: List[Any], progress: gr.Progress | None = None) -> List[Dict[str, Any]]:
+    """Handle uploaded files and return scanned metadata."""
+    paths = []
+    for f in files:
+        safe_filename = secure_filename(os.path.basename(f.name))
+        dest = os.path.join(IMAGES_DIR, safe_filename)
+        shutil.copy(f.name, dest)
+        paths.append(dest)
+    return _scan_paths(paths, progress)
 paths = []
     for f in files:
         dest = os.path.join(IMAGES_DIR, os.path.basename(f.name))
