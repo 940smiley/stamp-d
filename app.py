@@ -64,7 +64,13 @@ def _scan_paths(paths: List[str], progress: gr.Progress | None = None) -> List[D
                 "scan failed for %s: %s",
                 html.escape(path),
                 html.escape(str(exc)),
-            )
+try:
+            md = generate_metadata(path)
+        except Exception as exc:  # pragma: no cover - defensive
+            logging.exception(
+                "scan failed for %s: %s",
+                html.escape(path),
+                html.escape(str(exc)),
             md = {"name": "", "country": "", "denomination": "", "description": ""}
         record = {
             "image_path": path,
