@@ -73,7 +73,15 @@ def upload_and_scan(files: List[Any], progress: gr.Progress | None = None) -> Li
     paths = []
     for f in files:
         dest = os.path.join(IMAGES_DIR, os.path.basename(f.name))
-        shutil.copy(f.name, dest)
+paths = []
+    for f in files:
+        dest = os.path.join(IMAGES_DIR, os.path.basename(f.name))
+        try:
+            shutil.copy(f.name, dest)
+            paths.append(dest)
+        except (IOError, OSError) as e:
+            logging.error(f"Error copying file {f.name}: {str(e)}")
+    return _scan_paths(paths, progress)
         paths.append(dest)
     return _scan_paths(paths, progress)
 
