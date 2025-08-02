@@ -71,7 +71,33 @@ try:
         if progress is not None:
             try:
                 progress(idx / total)
-            except Exception:
+# Import logging module to enable exception logging
+import logging
+
+def _scan_paths(paths: List[str], progress: gr.Progress | None = None) -> List[Dict[str, Any]]:
+    """Scan *paths* and return metadata records."""
+    records = []
+    total = len(paths)
+    for idx, path in enumerate(paths, 1):
+        try:
+            md = generate_metadata(path)
+        except Exception as exc:  # pragma: no cover - defensive
+            logging.error("scan failed for %s: %s", path, exc)
+            md = {"name": "", "country": "", "denomination": "", "description": ""}
+        record = {
+            "image_path": path,
+            "stamp_name": md.get("name", ""),
+            "country": md.get("country", ""),
+            "denomination": md.get("denomination", ""),
+            "description": md.get("description", ""),
+        }
+        records.append(record)
+        if progress is not None:
+            try:
+                progress(idx / total)
+            except Exception as e:
+                logging.exception("Error updating progress: %s", e, exc_info=True)
+    return records
                 pass
     return records
 
