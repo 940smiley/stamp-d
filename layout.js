@@ -67,7 +67,20 @@ function enableLayoutMode(enabled) {
       if (!c.sortable) {
         c.sortable = Sortable.create(c, { animation: 150, handle: null, onEnd: saveOrder });
       }
-      Array.from(c.children).forEach(el => el.classList.add('resizable'));
+if (!c.sortable) {
+        c.sortable = Sortable.create(c, { animation: 150, handle: null, onEnd: saveOrder });
+      }
+      if (c.children) {
+        Array.from(c.children).forEach(el => el.classList.add('resizable'));
+      }
+    } else {
+      if (c.sortable) { c.sortable.destroy(); c.sortable = null; }
+      if (c.children) {
+        Array.from(c.children).forEach(el => el.classList.remove('resizable'));
+      }
+    }
+  });
+  document.body.classList.toggle('layout-mode', enabled);
     } else {
       if (c.sortable) { c.sortable.destroy(); c.sortable = null; }
       Array.from(c.children).forEach(el => el.classList.remove('resizable'));
