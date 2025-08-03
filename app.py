@@ -168,7 +168,22 @@ def save_upload(preview_table):
     try:
         # Query existing file hashes for duplicate detection
         existing_hashes = set()
-        existing_stamps = session.query(Stamp.file_hash).filter(Stamp.file_hash.isnot(None)).all()
+try:
+        # Query existing file hashes for duplicate detection
+        existing_hashes = set()
+        
+        # Fetch file hashes in batches
+        batch_size = 1000
+        offset = 0
+        while True:
+            batch = session.query(Stamp.file_hash).filter(Stamp.file_hash.isnot(None)).offset(offset).limit(batch_size).all()
+            if not batch:
+                break
+            existing_hashes.update(stamp.file_hash for stamp in batch)
+            offset += batch_size
+        
+        for row in preview_table:
+            image_path, country, denomination, year, notes = row
         for stamp in existing_stamps:
             existing_hashes.add(stamp.file_hash)
         
