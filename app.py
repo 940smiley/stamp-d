@@ -149,7 +149,25 @@ with gr.Blocks(elem_id="app-container") as demo:
         def trigger_reverse(idx, table):
             if 0 <= int(idx) < len(table):
                 ebay, colnect, hip, title, query = search_relevant_sources(table[int(idx)][0])
-                year, country, denom = parse_title(title)
+def trigger_reverse(idx, table):
+            if 0 <= int(idx) < len(table):
+                try:
+                    ebay, colnect, hip, title, query = search_relevant_sources(table[int(idx)][0])
+                    year, country, denom = parse_title(title)
+                    row = list(table[int(idx)])
+                    if country:
+                        row[1] = country
+                    if denom:
+                        row[2] = denom
+                    if year:
+                        row[3] = year
+                    table[int(idx)] = row
+                    return (ebay, colnect, hip, title, True, True, True, True, table)
+                except Exception as e:
+                    return (f"❌ Error: {str(e)}", "", "", "No match", True, False, False, False, table)
+            return ("❌ Invalid index", "", "", "No match", True, False, False, False, table)
+
+        reverse_btn_upload.click(
                 row = list(table[int(idx)])
                 if country:
                     row[1] = country
