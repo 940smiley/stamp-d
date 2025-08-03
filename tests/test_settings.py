@@ -1,8 +1,10 @@
-import sys, pathlib
+import sys
+from pathlib import Path
 
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.append(str(ROOT))
 
-from config import load_config, save_config
+from config import load_config, save_config  # noqa: E402
 
 
 def test_settings_roundtrip():

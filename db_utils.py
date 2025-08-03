@@ -6,10 +6,10 @@ helper functions for common CRUD operations.
 
 from __future__ import annotations
 
-from sqlalchemy import Column, Integer, String, create_engine
+from sqlalchemy import Column, Float, Integer, String, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from typing import Iterable, List, Dict, Any
+from typing import Any, Dict, Iterable, List
 
 from config import DB_PATH
 
@@ -23,19 +23,26 @@ class Stamp(Base):
     image_path = Column(String, unique=True)
     thumbnail_path = Column(String)
     stamp_name = Column(String)
-    country = Column(String)
-    denomination = Column(String)
-    year = Column(String)
-    color = Column(String)
-    perforation = Column(String)
-    block_type = Column(String)  # Single / Pair / Block / Strip
-    description = Column(String)
     catalog_number = Column(String)
+    country = Column(String)
+    color = Column(String)
+    denomination = Column(String)
+    perforation = Column(String)
+    format = Column(String)
     mint_used = Column(String)
-    lot_number = Column(String)
-    listed = Column(String)  # Yes/No
+    year = Column(String)
+    description = Column(String)
+    notes = Column(String)
+    collection = Column(String)
+    listed = Column(String)
+    marketplace = Column(String)
     listing_url = Column(String)
-    price = Column(String)
+    price = Column(Float)
+    sold = Column(String)
+    lot_number = Column(String)
+    listing_status = Column(String)
+    created_at = Column(String)
+    updated_at = Column(String)
 
 
 # Create engine and session
@@ -47,11 +54,6 @@ def init_db() -> None:
     Base.metadata.create_all(engine)
 
 
-def insert_stamp(data: Dict[str, Any]) -> int:
-    session = Session()
-    stamp = Stamp(**data)
-    session.add(stamp)
-    session.commit()
 def insert_stamp(data: Dict[str, Any]) -> int:
     session = Session()
     try:
@@ -82,23 +84,8 @@ def get_all_stamps() -> List[Stamp]:
     session = Session()
     try:
         return session.query(Stamp).all()
-    except Exception as e:
-        raise e
     finally:
         session.close()
-
-
-
-
-def insert_many(stamps: Iterable[Dict[str, Any]]) -> None:
-    session = Session()
-    session.add_all([Stamp(**s) for s in stamps])
-    session.commit()
-
-
-def get_all_stamps() -> List[Stamp]:
-    session = Session()
-    return session.query(Stamp).all()
 
 
 def get_stamp(stamp_id: int) -> Stamp | None:

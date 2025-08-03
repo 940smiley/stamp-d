@@ -29,7 +29,14 @@ def export_csv() -> str:
     session = Session()
     stamps: List[Stamp] = session.query(Stamp).all()
     filepath = os.path.join(BACKUP_DIR, f"export_{_timestamp()}.csv")
-    fields = ["id", "image_path", "stamp_name", "country", "denomination", "description"]
+    fields = [
+        "id",
+        "image_path",
+        "stamp_name",
+        "country",
+        "denomination",
+        "description",
+    ]
     with open(filepath, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(fields)
@@ -44,10 +51,26 @@ def export_xlsx() -> str:
     stamps: List[Stamp] = session.query(Stamp).all()
     wb = Workbook()
     ws = wb.active
-    headers = ["ID", "Image Path", "Name", "Country", "Denomination", "Description"]
+    headers = [
+        "ID",
+        "Image Path",
+        "Name",
+        "Country",
+        "Denomination",
+        "Description",
+    ]
     ws.append(headers)
     for s in stamps:
-        ws.append([s.id, s.image_path, s.stamp_name, s.country, s.denomination, s.description])
+        ws.append(
+            [
+                s.id,
+                s.image_path,
+                s.stamp_name,
+                s.country,
+                s.denomination,
+                s.description,
+            ]
+        )
     filepath = os.path.join(BACKUP_DIR, f"export_{_timestamp()}.xlsx")
     wb.save(filepath)
     return filepath
@@ -65,7 +88,9 @@ def export_pdf() -> str:
             pdf.image(s.image_path, w=60)
         pdf.ln(65)
         pdf.set_font("Arial", size=12)
-        pdf.cell(0, 10, f"{s.stamp_name or 'Unknown'} - {s.country}", ln=1)
+        pdf.cell(
+            0, 10, f"{s.stamp_name or 'Unknown'} - {s.country}", ln=1
+        )
         pdf.cell(0, 10, f"Denomination: {s.denomination or ''}", ln=1)
         pdf.multi_cell(0, 10, s.description or "", align="L")
     filepath = os.path.join(BACKUP_DIR, f"export_{_timestamp()}.pdf")

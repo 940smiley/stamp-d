@@ -1,3 +1,4 @@
+# flake8: noqa
 # openinterpreter_config_setup.py
 # Run this in OpenInterpreter to restructure and validate the Stamp'd app
 

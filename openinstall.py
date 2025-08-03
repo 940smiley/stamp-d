@@ -1,3 +1,4 @@
+# flake8: noqa
 # This script is meant to be run inside OpenInterpreter with full OS access.
 # It creates and verifies all required files for the Stamp'd application.
 

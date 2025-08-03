@@ -11,19 +11,21 @@ def parse_title(title: str):
     year = year_match.group(0) if year_match else ""
 
     # Try to locate a denomination such as '5c', '10 p', '2.50$', etc.
-    denom_match = re.search(
-        r"\b\d+(?:[.,]\d+)?\s?(?:c|¢|p|d|fr|pf|\$|€|£|kr|sen|yen|mk|cts?|cent|cents)\b",
-        title,
-        re.IGNORECASE,
+    denom_pattern = (
+        r"\b\d+(?:[.,]\d+)?\s?"
+        r"(?:c|¢|p|d|fr|pf|\$|€|£|kr|sen|yen|mk|cts?|cent|cents)\b"
     )
+    denom_match = re.search(denom_pattern, title, re.IGNORECASE)
     denom = denom_match.group(0).strip() if denom_match else ""
 
     # Guess country using words around the year/denomination
     country = ""
     if year_match:
         before = title[: year_match.start()]
-        after = title[year_match.end() :]
-        before_words = [w for w in re.sub(r"[^A-Za-z ]+", " ", before).split() if w]
+        after = title[year_match.end():]
+        before_words = [
+            w for w in re.sub(r"[^A-Za-z ]+", " ", before).split() if w
+        ]
         if before_words:
             filtered = [
                 w
@@ -40,7 +42,7 @@ def parse_title(title: str):
         else:
             after_clean = re.sub(r"[^A-Za-z0-9 ]+", " ", after)
             after_tokens = after_clean.split()
-            result_words = []
+            result_words: list[str] = []
             for w in after_tokens:
                 if any(ch.isdigit() for ch in w):
                     break
@@ -50,10 +52,17 @@ def parse_title(title: str):
                 if len(result_words) >= 3:
                     break
             if result_words:
-                country = " ".join(result_words)
+denom = denom_match.group(0).strip() if denom_match else ""
+
+    # Guess country using words around the year/denomination
+    country = extract_country(title, year_match, denom_match)
+
+    if not country:
     elif denom_match:
         before = title[: denom_match.start()]
-        before_words = [w for w in re.sub(r"[^A-Za-z ]+", " ", before).split() if w]
+        before_words = [
+            w for w in re.sub(r"[^A-Za-z ]+", " ", before).split() if w
+        ]
         if before_words:
             filtered = [
                 w
@@ -69,7 +78,9 @@ def parse_title(title: str):
             country = " ".join(before_words[-3:])
 
     if not country:
-        tokens = [t for t in re.sub(r"[^A-Za-z ]+", " ", title).split() if t]
+        tokens = [
+            t for t in re.sub(r"[^A-Za-z ]+", " ", title).split() if t
+        ]
         if tokens:
             country = tokens[0]
 

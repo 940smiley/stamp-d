@@ -1,8 +1,11 @@
 import requests
 from bs4 import BeautifulSoup
 
+
 def get_valuation(stamp_desc):
-    url = f"https://www.ebay.com/sch/i.html?_nkw={stamp_desc}&_sop=13&LH_Sold=1"
+    url = (
+        f"https://www.ebay.com/sch/i.html?_nkw={stamp_desc}&_sop=13&LH_Sold=1"
+    )
     resp = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
     soup = BeautifulSoup(resp.text, "html.parser")
     prices = []

@@ -2,9 +2,22 @@ import subprocess
 import sys
 
 modules = [
-    "gradio", "sqlalchemy", "psycopg2-binary", "pandas", "pillow", "opencv-python",
-    "imagehash", "plotly", "pyzbar", "qrcode", "flask-login", "scikit-image",
-    "requests", "beautifulsoup4", "reportlab", "pyinstaller"
+    "gradio",
+    "sqlalchemy",
+    "psycopg2-binary",
+    "pandas",
+    "pillow",
+    "opencv-python",
+    "imagehash",
+    "plotly",
+    "pyzbar",
+    "qrcode",
+    "flask-login",
+    "scikit-image",
+    "requests",
+    "beautifulsoup4",
+    "reportlab",
+    "pyinstaller",
 ]
 
 for m in modules:

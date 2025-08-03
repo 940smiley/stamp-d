@@ -15,6 +15,8 @@ os.makedirs(TEMP_UPLOADS, exist_ok=True)
 # -------------------------
 # Duplicate Detection
 # -------------------------
+
+
 def get_file_hash(filepath):
     """Return MD5 hash for duplicate detection."""
     if not os.path.exists(filepath):
@@ -25,14 +27,18 @@ def get_file_hash(filepath):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
 
+
 def is_duplicate(filepath, existing_hashes):
     """Check if file hash exists in DB hash list."""
     file_hash = get_file_hash(filepath)
     return file_hash in existing_hashes
 
+
 # -------------------------
 # Thumbnail Generation
 # -------------------------
+
+
 def generate_thumbnail(image_path):
     """Generate HTML thumbnail for Gradio gallery table."""
     if not os.path.exists(image_path):
@@ -40,15 +46,29 @@ def generate_thumbnail(image_path):
     try:
         img = Image.open(image_path)
         img.thumbnail(THUMB_SIZE)
-        thumb_path = os.path.join(TEMP_UPLOADS, f"thumb_{os.path.basename(image_path)}")
+try:
+        img = Image.open(image_path)
+        img.thumbnail(THUMB_SIZE)
+        # Import os.path for secure path handling
+        # Import secure_filename for sanitizing filenames
+        thumb_filename = secure_filename(os.path.basename(image_path))
+        thumb_path = os.path.join(TEMP_UPLOADS, f"thumb_{thumb_filename}")
+        img.save(thumb_path)
+        return f"<img src='{thumb_path}' width='50'/>"
+    except Exception:
+            TEMP_UPLOADS, f"thumb_{os.path.basename(image_path)}"
+        )
         img.save(thumb_path)
         return f"<img src='{thumb_path}' width='50'/>"
     except Exception:
         return ""
 
+
 # -------------------------
 # Image Processing for Listings
 # -------------------------
+
+
 def resize_for_listing(image_path, watermark=WATERMARK_ENABLED):
     """Resize image and apply optional watermark for marketplace listing."""
     if not os.path.exists(image_path):
@@ -59,19 +79,29 @@ def resize_for_listing(image_path, watermark=WATERMARK_ENABLED):
         img.thumbnail(LISTING_MAX_SIZE)
 
         if watermark:
-            txt = Image.new("RGBA", img.size, (255,255,255,0))
+            txt = Image.new("RGBA", img.size, (255, 255, 255, 0))
             draw = ImageDraw.Draw(txt)
-            font_size = int(img.size[0]/20)
+            font_size = int(img.size[0] / 20)
             try:
                 font = ImageFont.truetype("arial.ttf", font_size)
-            except:
+            except Exception:
                 font = ImageFont.load_default()
             text_width, text_height = draw.textsize(WATERMARK_TEXT, font)
-            position = (img.size[0] - text_width - 10, img.size[1] - text_height - 10)
-            draw.text(position, WATERMARK_TEXT, fill=(255,255,255,128), font=font)
+            position = (
+                img.size[0] - text_width - 10,
+                img.size[1] - text_height - 10,
+            )
+            draw.text(
+                position,
+                WATERMARK_TEXT,
+                fill=(255, 255, 255, 128),
+                font=font,
+            )
             img = Image.alpha_composite(img, txt)
 
-        out_path = os.path.join(TEMP_UPLOADS, f"listing_{os.path.basename(image_path)}")
+        out_path = os.path.join(
+            TEMP_UPLOADS, f"listing_{os.path.basename(image_path)}"
+        )
         img.convert("RGB").save(out_path, "JPEG", quality=85)
         return out_path
 
@@ -79,13 +109,16 @@ def resize_for_listing(image_path, watermark=WATERMARK_ENABLED):
         print(f"❌ Error processing image {image_path}: {e}")
         return None
 
+
 # -------------------------
 # Folder Scanning
 # -------------------------
+
+
 def process_new_images():
     """Scan image folder for new images and return list of paths."""
     files = []
     for fname in os.listdir(IMAGE_FOLDER):
-        if fname.lower().endswith((".jpg",".jpeg",".png")):
+        if fname.lower().endswith((".jpg", ".jpeg", ".png")):
             files.append(os.path.join(IMAGE_FOLDER, fname))
     return files
