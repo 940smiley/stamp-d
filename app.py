@@ -110,7 +110,21 @@ def scrape_ebay_match(ebay_url):
         soup = BeautifulSoup(r.text, "html.parser")
         item = soup.select_one(".s-item__title")
         return item.text if item else "No match found"
-    except requests.exceptions.RequestException:
+soup = BeautifulSoup(r.text, "html.parser")
+        item = soup.select_one(".s-item__title")
+        return item.text if item else "No match found"
+    except requests.ConnectionError:
+        logging.error("Connection error while scraping eBay")
+        return "Connection error"
+    except requests.Timeout:
+        logging.error("Timeout error while scraping eBay")
+        return "Timeout error"
+    except requests.RequestException as e:
+        logging.error(f"Unexpected error while scraping eBay: {str(e)}")
+        return "Unexpected error"
+
+def generate_iframes(ebay_url, colnect_url, hipstamp_url):
+    """Generate iframes for search results."""
         return "Error fetching data"
         soup = BeautifulSoup(r.text, "html.parser")
         item = soup.select_one(".s-item__title")
