@@ -9,7 +9,7 @@ from db import Session, Stamp
 from image_utils import enhance_and_crop, is_duplicate, classify_image
 from export_utils import export_csv
 from ai_utils import generate_description
-from parsing_utils import parse_titlefrom parsing_utils import parse_title
+from parsing_utils import parse_title
 # ...existing code...
 def reverse_image_lookup(image_path):
     # Dummy implementation; replace with actual reverse search logic
