@@ -158,7 +158,15 @@ def test_add_tag_security():
             print("  ✅ Payload was sanitized and processed safely")
         except ValueError as e:
             print(f"  ✅ Payload was rejected: {e}")
+print("  ✅ Payload was sanitized and processed safely")
+        except ValueError as e:
+            print(f"  ✅ Payload was rejected: {e}")
+        except SQLAlchemyError as e:  # import sqlalchemy.exc.SQLAlchemyError
+            print(f"  ❌ Database-related error: {e}")
+            return False
         except Exception as e:
+            print(f"  ❌ Unexpected error: {e}")
+            return False
             print(f"  ❌ Unexpected error: {e}")
             return False
     
