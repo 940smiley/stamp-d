@@ -127,18 +127,10 @@ def load_gallery_data():
                     img.thumbnail((64, 64))
                     buf = BytesIO()
                     img.save(buf, format="PNG")
-                b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+                b64 = base64.b64encode(buf.getvalue()).decode()
                 thumb = f"<img src='data:image/png;base64,{b64}' width='50'/>"
-img.save(buf, format="PNG")
-                b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
-                thumb = f"<img src='data:image/png;base64,{b64}' width='50'/>"
-            except (IOError, OSError) as e:
-                # import logging
-                logging.error(f"Error creating thumbnail for {s.image_path}: {str(e)}")
-                thumb = ""
-        else:
-            thumb = ""
-                thumb = ""
+            except (IOError, OSError):
+                thumb = ""  # Gracefully handle image loading errors
         else:
             thumb = ""
         data.append([thumb, s.id, s.country, s.denomination, s.year, s.notes])
