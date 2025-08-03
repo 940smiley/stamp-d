@@ -33,7 +33,18 @@ def teardown_module(module):
 
 def create_test_image(content=b"test_image_content"):
     """Create a temporary test image file."""
+import os  # Used for file operations, including removing temporary files
+import tempfile  # Used for creating temporary files
+
+def create_test_image(content=b"test_image_content"):
+    """Create a temporary test image file."""
     temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.jpg')
+    try:
+        temp_file.write(content)
+        temp_file.close()
+        return temp_file.name
+    finally:
+        os.unlink(temp_file.name)
     temp_file.write(content)
     temp_file.close()
     return temp_file.name
