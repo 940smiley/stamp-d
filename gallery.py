@@ -57,7 +57,27 @@ def search_stamps(query: str = "", filters: dict | None = None):
         )
     if filters and filters.get("tags"):
         q = q.join(Stamp.tags).filter(Tag.name.in_(filters["tags"]))
-    return q.all()
+def search_stamps(query: str = "", filters: dict | None = None):
+    session = Session()
+    try:
+        q = session.query(Stamp)
+        if query:
+            q = q.filter(
+                Stamp.country.ilike(f"%{query}%")
+                | Stamp.description.ilike(f"%{query}%")
+            )
+        if filters and filters.get("tags"):
+            q = q.join(Stamp.tags).filter(Tag.name.in_(filters["tags"]))
+        return q.all()
+    except Exception as e:
+        # TODO: Implement proper error logging
+        print(f"An error occurred while searching stamps: {str(e)}")
+        return []
+    finally:
+        session.close()
+
+
+def add_tag(stamp_id: int, tag_name: str) -> None:
 
 
 def add_tag(stamp_id: int, tag_name: str) -> None:
