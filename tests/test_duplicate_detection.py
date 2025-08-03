@@ -103,7 +103,41 @@ def test_save_upload_duplicate_detection():
         # Check that both stamps were saved
         session = Session()
         stamps = session.query(Stamp).all()
-        assert len(stamps) == 2
+[image2, "Country2", "20c", "2021", "Test stamp 2"]
+        ]
+        
+        result1 = save_upload(preview_data1)
+        assert "successfully" in result1
+        
+        # Check that both stamps were saved
+        try:
+            session = Session()
+            stamps = session.query(Stamp).all()
+            assert len(stamps) == 2
+            
+            # Verify hashes were stored
+            for stamp in stamps:
+                assert stamp.file_hash is not None
+                assert len(stamp.file_hash) == 32  # MD5 hash length
+        except Exception as e:
+            print(f"Database operation failed: {str(e)}")
+            raise
+        finally:
+            session.close()
+        
+        # Second upload - should skip duplicate and save only new one
+        image4 = create_test_image(b"unique_image4")
+        preview_data2 = [
+            [image3, "Country1", "10c", "2020", "Duplicate stamp"],  # Should be skipped
+            [image4, "Country3", "30c", "2022", "New stamp"]         # Should be saved
+        ]
+        
+        result2 = save_upload(preview_data2)
+        assert "successfully" in result2
+        
+        # Check that only one new stamp was added (total should be 3, not 4)
+        try:
+            session = Session()
         
         # Verify hashes were stored
         for stamp in stamps:
