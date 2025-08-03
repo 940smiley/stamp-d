@@ -52,7 +52,12 @@ def parse_title(title: str):
                 if len(result_words) >= 3:
                     break
             if result_words:
-                country = " ".join(result_words)
+denom = denom_match.group(0).strip() if denom_match else ""
+
+    # Guess country using words around the year/denomination
+    country = extract_country(title, year_match, denom_match)
+
+    if not country:
     elif denom_match:
         before = title[: denom_match.start()]
         before_words = [
