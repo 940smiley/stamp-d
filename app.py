@@ -266,7 +266,40 @@ if __name__ == "__main__":
                         int(id)).image_path) if id else (
                     "❌",
                     "❌",
-                    "❌"),
+stamp_id, image_display, gr.Textbox(
+                        visible=False), gr.Textbox(
+                            visible=False), gr.Textbox(
+                                visible=False), gr.Textbox(
+                                    visible=False)])
+
+            btn_rev_gallery.click(
+                lambda id: search_sources_safe(id),  # Use a new function for safe searching
+                inputs=stamp_id,
+                outputs=[
+                    ebay_iframe_g,
+                    colnect_iframe_g,
+                    hip_iframe_g])
+
+        # --- Export Tab ---
+        with gr.Tab("⬇️ Export"):
+            btn_export = gr.Button("Export CSV")
+            export_status = gr.Textbox()
+            btn_export.click(export_data, outputs=export_status)
+
+    demo.launch()
+
+# TODO: Implement the following function in the main code
+# def search_sources_safe(id):
+#     try:
+#         if not id:
+#             return "❌", "❌", "❌"
+#         stamp = Session().query(Stamp).get(int(id))
+#         if not stamp or not stamp.image_path:
+#             return "❌ Not found", "❌ Not found", "❌ Not found"
+#         return search_sources(stamp.image_path)
+#     except Exception as e:
+#         print(f"Error in search_sources_safe: {e}")
+#         return "❌ Error", "❌ Error", "❌ Error"
                 inputs=stamp_id,
                 outputs=[
                     ebay_iframe_g,
