@@ -1,16 +1,19 @@
 import os
 import sys
-import pathlib
+from pathlib import Path
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
 os.environ["STAMPD_DB_PATH"] = str(ROOT / "test_export.db")
 
-from db_utils import init_db, insert_stamp, Session, Stamp
-from export_utils import export_csv, export_xlsx, export_pdf
+from db_utils import Session, Stamp, init_db, insert_stamp  # noqa: E402
+from export_utils import export_csv, export_pdf, export_xlsx  # noqa: E402
 
 
 def setup_module(module):
+    db_path = os.environ["STAMPD_DB_PATH"]
+    if os.path.exists(db_path):
+        os.remove(db_path)
     init_db()
     session = Session()
     session.query(Stamp).delete()
