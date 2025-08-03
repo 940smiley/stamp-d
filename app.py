@@ -49,7 +49,26 @@ def preview_upload(images):
             with Image.open(path) as img:
                 img.thumbnail((64, 64))
                 buf = BytesIO()
+# Import statements for the fix
+import os
+from pathlib import Path  # Used for secure path handling
+
+def preview_upload(images):
+    rows = []
+    for path in images:
+        thumb_html = path
+        safe_path = Path(path).resolve()
+        if safe_path.is_file() and safe_path.parent == Path.cwd():
+            with Image.open(safe_path) as img:
+                img.thumbnail((64, 64))
+                buf = BytesIO()
                 img.save(buf, format="PNG")
+            b64 = base64.b64encode(buf.getvalue()).decode()
+            thumb_html = f"<img src='data:image/png;base64,{b64}' width='50'/>"
+        country = classify_image(str(safe_path))
+        desc = generate_description(str(safe_path))
+        rows.append([thumb_html, str(safe_path), country, "", "", desc])
+    return rows
             b64 = base64.b64encode(buf.getvalue()).decode()
             thumb_html = f"<img src='data:image/png;base64,{b64}' width='50'/>"
         country = classify_image(path)
