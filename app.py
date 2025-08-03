@@ -196,7 +196,19 @@ with gr.Blocks(elem_id="app-container") as demo:
                 if stamp:
                     ebay, colnect, hip, title, query = search_relevant_sources(stamp.image_path)
                     year, country, denom = parse_title(title)
-                    return (ebay, colnect, hip, title, country, denom, year)
+def gallery_reverse_search(sid):
+            if sid:
+                try:
+                    stamp = Session().query(Stamp).get(int(sid))
+                    if stamp:
+                        ebay, colnect, hip, title, query = search_relevant_sources(stamp.image_path)
+                        year, country, denom = parse_title(title)
+                        return (ebay, colnect, hip, title, country, denom, year)
+                except Exception as e:
+                    return (f"❌ Error: {str(e)}", "", "", "", "", "", "")
+            return ("❌ No stamp selected", "", "", "", "", "", "")
+
+        reverse_btn_gallery.click(
             return ("❌ No stamp selected", "", "", "", "", "", "")
 
         reverse_btn_gallery.click(
