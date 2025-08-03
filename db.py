@@ -48,7 +48,25 @@ def populate_missing_hashes():
     from image_utils import get_file_hash
     session = Session()
     try:
-        stamps_without_hash = session.query(Stamp).filter(Stamp.file_hash.is_(None)).all()
+from image_utils import get_file_hash
+    session = Session()
+    try:
+        # Process stamps in batches
+        batch_size = 100
+        offset = 0
+        while True:
+            stamps_without_hash = session.query(Stamp).filter(Stamp.file_hash.is_(None)).limit(batch_size).offset(offset).all()
+            if not stamps_without_hash:
+                break
+            for stamp in stamps_without_hash:
+                if stamp.image_path and os.path.exists(stamp.image_path):
+                    stamp.file_hash = get_file_hash(stamp.image_path)
+            session.commit()
+            offset += batch_size
+            print(f"✅ Updated {len(stamps_without_hash)} stamps with file hashes")
+    except Exception as e:
+        session.rollback()
+        print(f"❌ Error populating hashes: {e}")
         for stamp in stamps_without_hash:
             if stamp.image_path and os.path.exists(stamp.image_path):
                 stamp.file_hash = get_file_hash(stamp.image_path)
