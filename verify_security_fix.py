@@ -196,7 +196,11 @@ def main():
             
     except Exception as e:
         print(f"❌ Verification failed with error: {e}")
-        import traceback
+except Exception as e:
+        print(f"❌ Verification failed with error: {e}")
+        # from traceback import print_exc  # Import specific function for stack trace printing
+        print_exc()
+        return False
         traceback.print_exc()
         return False
 
