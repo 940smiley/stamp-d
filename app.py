@@ -265,7 +265,42 @@ def load_gallery_images():
         stamps = session.query(Stamp).all()
         return [(s.image_path, f"ID {s.id}: {s.country}") for s in stamps]
     finally:
+thumb = ""  # Gracefully handle image loading errors
+            else:
+                thumb = ""
+            data.append([thumb, s.id, s.country, s.denomination, s.year, s.notes])
+        return data
+    except SQLAlchemyError as e:
+        logging.error(f"Database error in load_gallery_data: {str(e)}")
+        return []
+    finally:
         session.close()
+
+def load_gallery_images():
+    session = Session()
+    try:
+        stamps = session.query(Stamp).all()
+        return [(s.image_path, f"ID {s.id}: {s.country}") for s in stamps]
+    except SQLAlchemyError as e:
+        logging.error(f"Database error in load_gallery_images: {str(e)}")
+        return []
+    finally:
+        session.close()
+
+def load_stamp_details(stamp_id):
+    session = Session()
+    try:
+        s = session.query(Stamp).get(int(stamp_id))
+        if s:
+            return s.id, s.image_path, s.country, s.denomination, s.year, s.notes
+        return "", "", "", "", "", ""
+    except SQLAlchemyError as e:
+        logging.error(f"Database error in load_stamp_details: {str(e)}")
+        return "", "", "", "", "", ""
+    finally:
+        session.close()
+
+def update_stamp_details(stamp_id, country, denomination, year, notes):
 
 def load_stamp_details(stamp_id):
     session = Session()
