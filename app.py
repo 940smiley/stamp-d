@@ -48,7 +48,27 @@ def search_relevant_sources(image_path):
         item = soup.select_one(".s-item__title")
         top_title = item.text if item else "No match found"
     except requests.exceptions.RequestException:
+try:
+        r = requests.get(ebay_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=8)
+        soup = BeautifulSoup(r.text, "html.parser")
+        item = soup.select_one(".s-item__title")
+        top_title = item.text if item else "No match found"
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error scraping eBay: {str(e)}")
         top_title = "No match found"
+
+    return (
+        f'<iframe src="{ebay_url}" width="100%" height="350"></iframe>',
+        f'<iframe src="{colnect_url}" width="100%" height="350"></iframe>',
+        f'<iframe src="{hipstamp_url}" width="100%" height="350"></iframe>',
+        top_title,
+        query
+    )
+
+# ---------------- Reverse Search ----------------
+def construct_search_urls(query):
+    """Construct search URLs for eBay, Colnect, and HipStamp."""
+    ebay_url = f"https://www.ebay.com/sch/i.html?_nkw={query}&LH_Sold=1"
 
     return (
         f'<iframe src="{ebay_url}" width="100%" height="350"></iframe>',
