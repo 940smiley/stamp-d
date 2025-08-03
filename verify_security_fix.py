@@ -194,7 +194,19 @@ def main():
             print("❌ Manual review required")
             return False
             
+print("❌ Manual review required")
+            return False
+            
+    except (ValueError, TypeError) as e:
+        print(f"❌ Verification failed with error: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
     except Exception as e:
+        print(f"❌ Unexpected error occurred during verification: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
         print(f"❌ Verification failed with error: {e}")
 except Exception as e:
         print(f"❌ Verification failed with error: {e}")
