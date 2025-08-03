@@ -35,7 +35,42 @@ if(!c.sortable){
         Array.from(c.children).forEach(el=>el.classList.remove('resizable'));
       }
     }
+function enableLayoutMode(enabled){
+  const uploadResults = document.getElementById('upload_results');
+  const galleryResults = document.getElementById('gallery_results');
+  const containers = [uploadResults, galleryResults];
+
+  containers.forEach(container => {
+    if(!container) return;
+    if(enabled){
+      if(!container.sortable){
+        container.sortable = Sortable.create(container, {animation: 150, handle: null, onEnd: saveOrder});
+      }
+      Array.from(container.children).forEach(el => el.classList.add('resizable'));
+    } else {
+      if(container.sortable){
+        container.sortable.destroy();
+        container.sortable = null;
+      }
+      Array.from(container.children).forEach(el => el.classList.remove('resizable'));
+    }
   });
+
+  document.body.classList.toggle('layout-mode', enabled);
+  localStorage.setItem('layout_mode', enabled ? '1' : '0');
+}
+
+function saveOrder(){
+  const upload = document.getElementById('upload_results');
+// Cache DOM elements
+const uploadResults = document.getElementById('upload_results');
+const galleryResults = document.getElementById('gallery_results');
+
+function enableLayoutMode(enabled){
+  const containers = [uploadResults, galleryResults];
+  containers.forEach(c => {
+    if(!c) return;
+    if(enabled){
   document.body.classList.toggle('layout-mode', enabled);
     }else{
       if(c.sortable){c.sortable.destroy();c.sortable=null;}
