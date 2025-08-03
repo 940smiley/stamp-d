@@ -173,7 +173,48 @@ function applySavedOrder(){
     enableLayoutMode(mode);
     toggle.addEventListener('change',()=>enableLayoutMode(toggle.checked));
   }
+function applySavedOrder() {
+  const upload = document.getElementById('upload_results');
+  const gallery = document.getElementById('gallery_results');
+
+  if (upload) {
+    let savedUp = [];
+    try {
+      savedUp = JSON.parse(localStorage.getItem('upload_order') || '[]');
+    } catch (error) {
+      console.error('Error parsing upload_order:', error);
+    }
+    savedUp.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) upload.appendChild(el);
+    });
+  }
+
+  if (gallery) {
+    let savedGal = [];
+    try {
+      savedGal = JSON.parse(localStorage.getItem('gallery_order') || '[]');
+    } catch (error) {
+      console.error('Error parsing gallery_order:', error);
+    }
+    savedGal.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) gallery.appendChild(el);
+    });
+  }
+
+  const mode = localStorage.getItem('layout_mode') === '1';
+  const toggle = document.getElementById('layout_toggle');
+  if (toggle) {
+    toggle.checked = mode;
+    enableLayoutMode(mode);
+    toggle.addEventListener('change', () => enableLayoutMode(toggle.checked));
+  }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  applySavedOrder();
+});
 document.addEventListener('DOMContentLoaded',()=>{
   applySavedOrder();
 });
