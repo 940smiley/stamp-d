@@ -119,16 +119,13 @@ for s in session.query(Stamp).all():
                     buf = BytesIO()
                     img.save(buf, format="PNG")
                 b64 = base64.b64encode(buf.getvalue()).decode()
-                thumb_html = f"<img src='data:image/png;base64,{b64}' width='50'/>"
-            except IOError:
-                print(f"Error processing image: {s.image_path}")
-        data.append([thumb_html, s.id, s.country,
-                    s.denomination, s.year, s.notes])
-    return data
-            b64 = base64.b64encode(buf.getvalue()).decode()
-            thumb_html = f"<img src='data:image/png;base64,{b64}' width='50'/>"
-        data.append([thumb_html, s.id, s.country,
-                    s.denomination, s.year, s.notes])
+
+                thumb = f"<img src='data:image/png;base64,{b64}' width='50'/>"
+            except (IOError, OSError):
+                thumb = ""  # Gracefully handle image loading errors
+        else:
+            thumb = ""
+        data.append([thumb, s.id, s.country, s.denomination, s.year, s.notes])
     return data
 
 
