@@ -184,7 +184,40 @@ def save_upload(preview_table):
 def load_gallery_data():
     session = Session()
     try:
-        stamps = session.query(Stamp).all()
+stamp = Stamp(country=country, denomination=denomination, year=year,
+                          notes=notes, image_path=image_path, description=notes)
+            session.add(stamp)
+        session.commit()
+        return "✅ Stamps saved successfully!"
+    finally:
+        session.close()
+
+# ---------------- Gallery ----------------
+def load_gallery_data(page=1, per_page=50):
+    session = Session()
+    try:
+        total = session.query(Stamp).count()
+        stamps = session.query(Stamp).order_by(Stamp.id).offset((page-1)*per_page).limit(per_page).all()
+        data = []
+        for s in stamps:
+            # create thumbnail
+            if os.path.exists(s.image_path):
+                try:
+                    with Image.open(s.image_path) as img:
+                        img.thumbnail((64, 64))
+                        buf = BytesIO()
+                        img.save(buf, format="PNG")
+                    b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+                    thumb = f"<img src='data:image/png;base64,{b64}' width='50'/>"
+                except (IOError, OSError) as e:
+                    logging.error(f"Error creating thumbnail for {s.image_path}: {str(e)}")
+                    thumb = ""  # Gracefully handle image loading errors
+            else:
+                thumb = ""
+            data.append([thumb, s.id, s.country, s.denomination, s.year, s.notes])
+        return data, total
+    finally:
+        session.close()
         data = []
         for s in stamps:
             # create thumbnail
