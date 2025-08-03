@@ -36,7 +36,23 @@ def search_stamps(query: str = "", filters: dict | None = None):
     q = session.query(Stamp)
     if query:
         q = q.filter(
-            Stamp.country.ilike(f"%{query}%")
+# Import sqlalchemy.sql.expression for safe SQL expression construction
+# Import sqlalchemy.orm for Session and Query types
+from sqlalchemy.sql.expression import or_
+from sqlalchemy.orm import Session, Query
+
+def search_stamps(query: str = "", filters: dict | None = None):
+    session = Session()
+    q: Query = session.query(Stamp)
+    if query:
+        q = q.filter(
+            or_(
+                Stamp.country.ilike("%" + query + "%"),
+                Stamp.description.ilike("%" + query + "%")
+            )
+        )
+    if filters and filters.get("tags"):
+        q = q.join(Stamp.tags).filter(Tag.name.in_(filters["tags"]))
             | Stamp.description.ilike(f"%{query}%")
         )
     if filters and filters.get("tags"):
