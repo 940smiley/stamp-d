@@ -386,7 +386,21 @@ for f in files:
                         year, country, denom = parse_title(title)
                         logging.info(f"Reverse search completed for stamp id: {sid}")
                         return (ebay, colnect, hip, title, country, denom, year)
+year, country, denom = parse_title(title)
+                        logging.info(f"Reverse search completed for stamp id: {sid}")
+                        return (ebay, colnect, hip, title, country, denom, year)
+                except (ValueError, TypeError) as e:
+                    logging.error(f"Error in gallery reverse search: {str(e)}")
+                    return (f"❌ Error: Invalid stamp ID", "", "", "", "", "", "")
+                except requests.RequestException as e:
+                    logging.error(f"Network error in gallery reverse search: {str(e)}")
+                    return (f"❌ Error: Network issue", "", "", "", "", "", "")
                 except Exception as e:
+                    logging.error(f"Unexpected error in gallery reverse search: {str(e)}")
+                    raise
+                finally:
+                    session.close()
+            logging.warning("No stamp selected or stamp not found")
                     logging.error(f"Error in gallery reverse search: {str(e)}")
                     return (f"❌ Error: {str(e)}", "", "", "", "", "", "")
                 finally:
