@@ -68,7 +68,50 @@ def construct_search_urls(query):
 def scrape_ebay_match(ebay_url):
     """Scrape the top eBay match."""
     try:
+# Import urllib.parse for URL encoding and validation
+# Import validators for URL validation
+import urllib.parse
+import validators
+
+def search_relevant_sources(image_path):
+    """Run refined searches for eBay sold items, Colnect, HipStamp."""
+    if not image_path or not os.path.exists(image_path):
+        return ("❌ Image not found.", "", "", "No match found", "")
+
+    query = os.path.basename(image_path).replace("_", " ")
+    ebay_url, colnect_url, hipstamp_url = construct_search_urls(query)
+
+    # Try scrape top eBay match
+    top_title = scrape_ebay_match(ebay_url)
+
+    return (
+        f'<iframe src="{ebay_url}" width="100%" height="350"></iframe>',
+        f'<iframe src="{colnect_url}" width="100%" height="350"></iframe>',
+        f'<iframe src="{hipstamp_url}" width="100%" height="350"></iframe>',
+        top_title,
+        query
+    )
+
+# ---------------- Reverse Search ----------------
+def construct_search_urls(query):
+    """Construct search URLs for eBay, Colnect, and HipStamp."""
+    encoded_query = urllib.parse.quote(query)
+    ebay_url = f"https://www.ebay.com/sch/i.html?_nkw={encoded_query}&LH_Sold=1"
+    colnect_url = f"https://colnect.com/en/stamps/list/{encoded_query}"
+    hipstamp_url = f"https://www.hipstamp.com/search?keywords={encoded_query}&show=store_items"
+    return ebay_url, colnect_url, hipstamp_url
+
+def scrape_ebay_match(ebay_url):
+    """Scrape the top eBay match."""
+    if not validators.url(ebay_url):
+        return "Invalid URL"
+    try:
         r = requests.get(ebay_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=8)
+        soup = BeautifulSoup(r.text, "html.parser")
+        item = soup.select_one(".s-item__title")
+        return item.text if item else "No match found"
+    except requests.exceptions.RequestException:
+        return "Error fetching data"
         soup = BeautifulSoup(r.text, "html.parser")
         item = soup.select_one(".s-item__title")
         return item.text if item else "No match found"
