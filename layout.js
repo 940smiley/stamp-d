@@ -4,7 +4,11 @@ function enableLayoutMode(enabled){
   const containers=[upload, gallery];
 const upload = document.getElementById('upload_results');
   const gallery = document.getElementById('gallery_results');
+function enableLayoutMode(enabled){
+  const upload = document.getElementById('upload_results');
+  const gallery = document.getElementById('gallery_results');
   const containers=[upload, gallery];
+  containers.forEach(container => {
   containers.forEach(container => {
     if(!container) return;
     if(enabled){
