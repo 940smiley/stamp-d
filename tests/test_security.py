@@ -280,7 +280,14 @@ class TestSQLInjectionPrevention(unittest.TestCase):
             
             try:
                 search_stamps("test")
-            except Exception:
+try:
+                search_stamps("test")
+            except Exception as e:
+                # Import logging to log exceptions
+                import logging
+                logging.exception("An error occurred while searching stamps: %s", e)
+            
+            mock_session.close.assert_called_once()
                 pass
             
             mock_session.close.assert_called_once()
