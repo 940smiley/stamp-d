@@ -59,7 +59,14 @@ def test_injection_prevention():
                 print(f"✅ Payload '{payload[:20]}...' rejected safely")
             except Exception as e:
                 print(f"❌ Unexpected error with payload: {e}")
+print(f"✅ Payload '{payload[:20]}...' rejected safely")
+            except Exception as e:
+                print(f"❌ Unexpected error with payload: {e}")
+                import traceback  # Import traceback module
+                traceback.print_exc()  # Print the full traceback
                 return False
+        
+        return True
         
         return True
         
