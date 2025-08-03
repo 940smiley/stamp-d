@@ -101,7 +101,23 @@ def test_injection_prevention():
         for i, payload in enumerate(payloads, 1):
             try:
                 results = search_stamps(payload)
-                print(f"✓ Payload {i}/5 handled safely (returned {len(results)} results)")
+for i, payload in enumerate(payloads, 1):
+            try:
+                results = search_stamps(payload)
+                logging.info(f"✓ Payload {i}/5 handled safely (returned {len(results)} results)")  # import logging
+            except ValueError as e:
+                logging.info(f"✓ Payload {i}/5 rejected safely: {str(e)[:50]}...")  # import logging
+            except Exception as e:
+                logging.error(f"❌ Unexpected error with payload {i}: {e}")  # import logging
+                return False
+        
+        return True
+        
+    except Exception as e:
+        logging.error(f"❌ Injection prevention test failed: {e}")  # import logging
+        return False
+
+def test_input_validation():
             except ValueError as e:
                 print(f"✓ Payload {i}/5 rejected safely: {str(e)[:50]}...")
             except Exception as e:
