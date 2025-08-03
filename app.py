@@ -309,7 +309,45 @@ def upload_and_scan(files: List[Any], progress: gr.Progress | None = None) -> Li
                 if stamp:
                     ebay, colnect, hip, title, query = search_relevant_sources(stamp.image_path)
                     year, country, denom = parse_title(title)
-def gallery_reverse_search(sid):
+colnect_frame_g = gr.HTML(visible=False)
+        hipstamp_frame_g = gr.HTML(visible=False)
+        suggested_title_g = gr.Textbox(label="Top eBay Match Title", visible=False)
+
+        def gallery_reverse_search(sid):
+            if sid:
+                try:
+                    stamp = Session().query(Stamp).get(int(sid))
+                    if stamp:
+                        ebay, colnect, hip, title, query = search_relevant_sources(stamp.image_path)
+                        year, country, denom = parse_title(title)
+                        return (ebay, colnect, hip, title, country, denom, year)
+                except Exception as e:
+                    return (f"❌ Error: {str(e)}", "", "", "", "", "", "")
+            return ("❌ No stamp selected", "", "", "", "", "", "")
+
+        reverse_btn_gallery.click(
+            gallery_reverse_search,
+            inputs=stamp_id,
+            outputs=[ebay_frame_g, colnect_frame_g, hipstamp_frame_g, suggested_title_g,
+                     country_edit, denom_edit, year_edit]
+        )
+
+        update_btn = gr.Button("💾 Update Stamp")
+        update_btn.click(update_stamp_details,
+                         [stamp_id, country_edit, denom_edit, year_edit, notes_edit],
+                         update_status)
+
+
+def populate_details(stamp_id):
+    return get_stamp_by_id(stamp_id)
+
+        def toggle_views(view_mode):
+            return (gr.update(visible=(view_mode == "Table View")),
+                    gr.update(visible=(view_mode == "Images Only")))
+
+# === UI ===
+with gr.Blocks(title="Stamp'd") as demo:
+    gr.Markdown("# 📬 Stamp'd — Smart Stamp Cataloging")
             if sid:
                 try:
                     stamp = Session().query(Stamp).get(int(sid))
