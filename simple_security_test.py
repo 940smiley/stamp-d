@@ -25,7 +25,16 @@ def test_basic_functionality():
         return True
         
     except Exception as e:
-        print(f"❌ Basic functionality test failed: {e}")
+return True
+        
+    except ImportError as e:
+        print(f"❌ Basic functionality test failed: Import error - {e}")
+        return False
+    except Exception as e:
+        print(f"❌ Basic functionality test failed: Unexpected error - {e}")
+        return False
+
+def test_injection_prevention():
         return False
 
 def test_injection_prevention():
