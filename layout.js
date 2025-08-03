@@ -159,7 +159,26 @@ function saveOrder(){
 function applySavedOrder(){
   const savedUp=JSON.parse(localStorage.getItem('upload_order')||'[]');
   savedUp.forEach(id=>{const el=document.getElementById(id);if(el) uploadResults.appendChild(el);});
-  const savedGal=JSON.parse(localStorage.getItem('gallery_order')||'[]');
+}
+
+function applySavedOrder(){
+  let savedUp = [];
+  try {
+    savedUp = JSON.parse(localStorage.getItem('upload_order') || '[]');
+  } catch (error) {
+    console.error('Error parsing upload_order:', error);
+  }
+  savedUp.forEach(id=>{const el=document.getElementById(id);if(el) uploadResults.appendChild(el);});
+  
+  let savedGal = [];
+  try {
+    savedGal = JSON.parse(localStorage.getItem('gallery_order') || '[]');
+  } catch (error) {
+    console.error('Error parsing gallery_order:', error);
+  }
+  savedGal.forEach(id=>{const el=document.getElementById(id);if(el) galleryResults.appendChild(el);});
+  const mode=localStorage.getItem('layout_mode')==='1';
+  const toggle=document.getElementById('layout_toggle');
   savedGal.forEach(id=>{const el=document.getElementById(id);if(el) galleryResults.appendChild(el);});
   const mode=localStorage.getItem('layout_mode')==='1';
   const toggle=document.getElementById('layout_toggle');
