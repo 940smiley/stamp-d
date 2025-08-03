@@ -276,7 +276,23 @@ def gallery_reverse_search(sid):
             return ("❌ No stamp selected", "", "", "", "", "", "")
 
         reverse_btn_gallery.click(
+suggested_title_g = gr.Textbox(label="Top eBay Match Title", visible=False)
+
+        def gallery_reverse_search(sid):
+            # import logging
+            logging.info(f"Entering gallery_reverse_search with sid: {sid}")
+            if sid:
+                stamp = Session().query(Stamp).get(int(sid))
+                if stamp:
+                    logging.info(f"Found stamp with id: {sid}")
+                    ebay, colnect, hip, title, query = search_relevant_sources(stamp.image_path)
+                    year, country, denom = parse_title(title)
+                    logging.info(f"Reverse search completed for stamp id: {sid}")
+                    return (ebay, colnect, hip, title, country, denom, year)
+            logging.warning("No stamp selected or stamp not found")
             return ("❌ No stamp selected", "", "", "", "", "", "")
+
+        reverse_btn_gallery.click(
 
         reverse_btn_gallery.click(
             gallery_reverse_search,
