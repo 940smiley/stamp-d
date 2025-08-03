@@ -192,7 +192,51 @@ def save_scans(scans):
             description=data.get("notes", ""),
         )
         session.add(stamp)
-    session.commit()
+}
+        )
+    return scans
+
+
+def save_scans(scans):
+    """Persist scan data to the database."""
+    session = Session()
+    try:
+        for data in scans:
+            stamp = Stamp(
+                image_path=data["image_path"],
+                country=data.get("country", ""),
+                denomination=data.get("denomination", ""),
+                year=data.get("year", ""),
+                notes=data.get("notes", ""),
+                description=data.get("notes", ""),
+            )
+            session.add(stamp)
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        print(f"Error saving scans: {str(e)}")
+    finally:
+        session.close()
+
+
+def load_gallery(_):
+    """Wrapper used by tests to fetch gallery rows."""
+    return load_gallery_data()
+# ---------------- Export ----------------
+
+
+def export_data():
+    return f"📁 Exported to {export_csv()}"
+
+
+# ---------------- UI ----------------
+if __name__ == "__main__":
+    with gr.Blocks(css="#app-container{padding:10px;}") as demo:
+        gr.Markdown("# 📬 Stamp'd – Inline Editing Version")
+
+        # --- Upload Tab ---
+        with gr.Tab("➕ Upload"):
+            upload_files = gr.File(
 
 
 def load_gallery(_):
