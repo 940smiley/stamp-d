@@ -50,6 +50,18 @@ def test_legitimate_searches():
     """Test that legitimate searches still work correctly."""
     print("\n" + "="*50)
     print("Testing legitimate search functionality...")
+def test_legitimate_searches():
+    """Test that legitimate searches still work correctly."""
+    # import logging
+    # logging.basicConfig(level=logging.INFO)
+    # logger = logging.getLogger(__name__)
+    # logger.info("
+" + "="*50)
+    # logger.info("Testing legitimate search functionality...")
+    # logger.info("="*50)
+    print("
+" + "="*50)
+    print("Testing legitimate search functionality...")
     print("="*50)
     
     # Test basic search
