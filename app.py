@@ -13,7 +13,14 @@ from parsing_utils import parse_title
 # ...existing code...
 def reverse_image_lookup(image_path):
     # Dummy implementation; replace with actual reverse search logic
+from parsing_utils import parse_title
+# ...existing code...
+def reverse_image_lookup(image_path):
+    # TODO: Implement actual reverse image search logic
+    # This function should perform a reverse image search and return relevant results
+    # Consider using libraries like Google Images Search API or TinEye API for implementation
     return f"Reverse search results for {os.path.basename(str(image_path))}" if image_path else "No image provided."
+"""Main Gradio application for Stamp'd.
 """Main Gradio application for Stamp'd.
 
 The UI exposes functionality for scanning stamps using a local Ollama
@@ -22,6 +29,11 @@ implementation focuses on being robust in a variety of environments – if
 optional dependencies are missing the features gracefully degrade.
 """
 
+The UI exposes functionality for scanning stamps using a local Ollama
+model, managing the gallery, exporting data and adjusting settings.  The
+implementation focuses on being robust in a variety of environments – if
+optional dependencies are missing the features gracefully degrade.
+"""
 
 
 # ---------------- Reverse Search ----------------
@@ -62,7 +74,53 @@ def construct_search_urls(query):
 def scrape_ebay_match(ebay_url):
     """Scrape the top eBay match."""
     try:
+# Import urllib.parse for URL encoding and validators for URL validation
+# These libraries help ensure safe URL construction and validation
+import urllib.parse
+import validators
+
+def search_relevant_sources(image_path):
+    """Run refined searches for eBay sold items, Colnect, HipStamp."""
+    if not image_path or not os.path.exists(image_path):
+        return ("❌ Image not found.", "", "", "No match found", "")
+
+    query = urllib.parse.quote(os.path.basename(image_path).replace("_", " "))
+    ebay_url, colnect_url, hipstamp_url = construct_search_urls(query)
+
+    # Try scrape top eBay match
+    top_title = scrape_ebay_match(ebay_url)
+
+    return (
+        f'<iframe src="{ebay_url}" width="100%" height="350"></iframe>',
+        f'<iframe src="{colnect_url}" width="100%" height="350"></iframe>',
+        f'<iframe src="{hipstamp_url}" width="100%" height="350"></iframe>',
+        top_title,
+        query
+    )
+
+# ---------------- Reverse Search ----------------
+def construct_search_urls(query):
+    """Construct search URLs for eBay, Colnect, and HipStamp."""
+    base_urls = {
+        "ebay": "https://www.ebay.com/sch/i.html?_nkw={}&LH_Sold=1",
+        "colnect": "https://colnect.com/en/stamps/list/{}",
+        "hipstamp": "https://www.hipstamp.com/search?keywords={}&show=store_items"
+    }
+    
+    return {site: url.format(query) for site, url in base_urls.items() if validators.url(url.format(query))}
+
+def scrape_ebay_match(ebay_url):
+    """Scrape the top eBay match."""
+    if not validators.url(ebay_url):
+        return "Invalid URL"
+    
+    try:
         r = requests.get(ebay_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=8)
+        soup = BeautifulSoup(r.text, "html.parser")
+        item = soup.select_one(".s-item__title")
+        return item.text if item else "No match found"
+    except requests.exceptions.RequestException:
+        return "Error fetching data"
         soup = BeautifulSoup(r.text, "html.parser")
         item = soup.select_one(".s-item__title")
         return item.text if item else "No match found"
@@ -77,6 +135,7 @@ def generate_iframes(ebay_url, colnect_url, hipstamp_url):
         f'<iframe src="{hipstamp_url}" width="100%" height="350"></iframe>'
     )
 
+
 def search_relevant_sources(image_path):
     """Run refined searches for eBay sold items, Colnect, HipStamp."""
     if not image_path or not os.path.exists(image_path):
@@ -86,6 +145,7 @@ def search_relevant_sources(image_path):
     ebay_url, colnect_url, hipstamp_url = construct_search_urls(query)
     top_title = scrape_ebay_match(ebay_url)
     ebay_iframe, colnect_iframe, hipstamp_iframe = generate_iframes(ebay_url, colnect_url, hipstamp_url)
+
 
     return (ebay_iframe, colnect_iframe, hipstamp_iframe, top_title, query)
 
@@ -103,16 +163,53 @@ def preview_upload(images):
     return preview_data
 
 def save_upload(preview_table):
+    from image_utils import get_file_hash
     session = Session()
-    for row in preview_table:
-        image_path, country, denomination, year, notes = row
-        if is_duplicate(image_path, session):
-            continue
-        stamp = Stamp(country=country, denomination=denomination, year=year,
-                      notes=notes, image_path=image_path, description=notes)
-        session.add(stamp)
-    session.commit()
-    return "✅ Stamps saved successfully!"
+    try:
+        # Query existing file hashes for duplicate detection
+        existing_hashes = set()
+try:
+        # Query existing file hashes for duplicate detection
+        existing_hashes = set()
+        
+        # Fetch file hashes in batches
+        batch_size = 1000
+        offset = 0
+        while True:
+            batch = session.query(Stamp.file_hash).filter(Stamp.file_hash.isnot(None)).offset(offset).limit(batch_size).all()
+            if not batch:
+                break
+            existing_hashes.update(stamp.file_hash for stamp in batch)
+            offset += batch_size
+        
+        for row in preview_table:
+            image_path, country, denomination, year, notes = row
+        for stamp in existing_stamps:
+            existing_hashes.add(stamp.file_hash)
+        
+        for row in preview_table:
+            image_path, country, denomination, year, notes = row
+            if is_duplicate(image_path, existing_hashes):
+                continue
+            
+            # Calculate file hash for the new stamp
+            file_hash = get_file_hash(image_path)
+            stamp = Stamp(country=country, denomination=denomination, year=year,
+                          notes=notes, image_path=image_path, description=notes,
+                          file_hash=file_hash)
+            session.add(stamp)
+            # Add the new hash to our set to prevent duplicates within this batch
+            if file_hash:
+                existing_hashes.add(file_hash)
+        
+        session.commit()
+        return "✅ Stamps saved successfully!"
+    except Exception as e:
+        session.rollback()
+        return f"❌ Error saving stamps: {e}"
+    finally:
+        session.close()
+
 
 # ---------------- Gallery ----------------
 def load_gallery_data():
@@ -276,7 +373,16 @@ def upload_and_scan(files: List[Any], progress: gr.Progress | None = None) -> Li
         suggested_title_g = gr.Textbox(label="Top eBay Match Title", visible=False)
 
         def gallery_reverse_search(sid):
-            """Perform reverse image search for selected stamp."""
+            if sid:
+                stamp = Session().query(Stamp).get(int(sid))
+                if stamp:
+                    ebay, colnect, hip, title, query = search_relevant_sources(stamp.image_path)
+                    year, country, denom = parse_title(title)
+colnect_frame_g = gr.HTML(visible=False)
+        hipstamp_frame_g = gr.HTML(visible=False)
+        suggested_title_g = gr.Textbox(label="Top eBay Match Title", visible=False)
+
+        def gallery_reverse_search(sid):
             if sid:
                 try:
                     stamp = Session().query(Stamp).get(int(sid))
@@ -300,63 +406,71 @@ def upload_and_scan(files: List[Any], progress: gr.Progress | None = None) -> Li
                          [stamp_id, country_edit, denom_edit, year_edit, notes_edit],
                          update_status)
 
-        # Add gallery images component for image-only view
-        gallery_images = gr.Gallery(
-            label="Stamp Gallery",
-            show_label=False,
-            elem_id="gallery",
-            columns=4,
-            rows=3,
-            object_fit="contain",
-            height="auto",
-            visible=False
-        )
 
-        def on_gallery_table_select(evt):
-            """Handle gallery table selection event."""
-            if not evt or not evt.value:
-                return "", None, "", "", "", ""
-            stamp_id = evt.value[1]  # ID is in the second column
-            return load_stamp_details(stamp_id)
-
-        def on_gallery_images_select(evt):
-            """Handle gallery images selection event."""
-            if not evt:
-                return "", None, "", "", "", ""
-            # Extract stamp ID from the label format "ID X: Country"
-            label = evt.value[1] if evt.value else ""
-            if label.startswith("ID "):
-                stamp_id = label.split(":")[0].replace("ID ", "")
-                return load_stamp_details(stamp_id)
-            return "", None, "", "", "", ""
-
-        def refresh_gallery():
-            """Refresh gallery data."""
-            table_data = load_gallery_table()
-            images_data = load_gallery_images()
-            return table_data, images_data
+def populate_details(stamp_id):
+    return get_stamp_by_id(stamp_id)
 
         def toggle_views(view_mode):
-            """Toggle between table and images view."""
             return (gr.update(visible=(view_mode == "Table View")),
                     gr.update(visible=(view_mode == "Images Only")))
 
-        # Event handlers
-        gallery_table.select(on_gallery_table_select, None, 
-                           [stamp_id, image_display, country_edit, denom_edit, year_edit, notes_edit])
-        gallery_images.select(on_gallery_images_select, None,
-                            [stamp_id, image_display, country_edit, denom_edit, year_edit, notes_edit])
-        
-        refresh_btn.click(refresh_gallery, None, [gallery_table, gallery_images])
-        view_switch.change(toggle_views, view_switch, [gallery_table, gallery_images])
+# === UI ===
+with gr.Blocks(title="Stamp'd") as demo:
+    gr.Markdown("# 📬 Stamp'd — Smart Stamp Cataloging")
+            if sid:
+                try:
+                    stamp = Session().query(Stamp).get(int(sid))
+                    if stamp:
+                        ebay, colnect, hip, title, query = search_relevant_sources(stamp.image_path)
+                        year, country, denom = parse_title(title)
+                        return (ebay, colnect, hip, title, country, denom, year)
+                except Exception as e:
+                    return (f"❌ Error: {str(e)}", "", "", "", "", "", "")
+            return ("❌ No stamp selected", "", "", "", "", "", "")
+
+        reverse_btn_gallery.click(
+suggested_title_g = gr.Textbox(label="Top eBay Match Title", visible=False)
+
+        def gallery_reverse_search(sid):
+            # import logging
+            logging.info(f"Entering gallery_reverse_search with sid: {sid}")
+            if sid:
+                stamp = Session().query(Stamp).get(int(sid))
+                if stamp:
+                    logging.info(f"Found stamp with id: {sid}")
+                    ebay, colnect, hip, title, query = search_relevant_sources(stamp.image_path)
+                    year, country, denom = parse_title(title)
+                    logging.info(f"Reverse search completed for stamp id: {sid}")
+                    return (ebay, colnect, hip, title, country, denom, year)
+            logging.warning("No stamp selected or stamp not found")
+            return ("❌ No stamp selected", "", "", "", "", "", "")
+
+        reverse_btn_gallery.click(
+
+        reverse_btn_gallery.click(
+            gallery_reverse_search,
+            inputs=stamp_id,
+            outputs=[ebay_frame_g, colnect_frame_g, hipstamp_frame_g, suggested_title_g,
+                     country_edit, denom_edit, year_edit]
+        )
+
+        update_btn = gr.Button("💾 Update Stamp")
+        update_btn.click(update_stamp_details,
+                         [stamp_id, country_edit, denom_edit, year_edit, notes_edit],
+                         update_status)
 
 
+def populate_details(stamp_id):
+    return get_stamp_by_id(stamp_id)
 
-
+        def toggle_views(view_mode):
+            return (gr.update(visible=(view_mode == "Table View")),
+                    gr.update(visible=(view_mode == "Images Only")))
 
 # === UI ===
 with gr.Blocks(title="Stamp’d") as demo:
     gr.Markdown("# 📬 Stamp’d — Smart Stamp Cataloging")
+
 
         gallery_table.select(
             lambda evt: load_stamp_details(evt.value[1]),
