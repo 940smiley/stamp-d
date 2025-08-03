@@ -316,7 +316,32 @@ with gr.Blocks(elem_id="app-container") as demo:
                     if year:
                         row[3] = year
                     table[int(idx)] = row
+hipstamp_frame = gr.HTML(visible=False)
+        suggested_title = gr.Textbox(label="Top eBay Match Title", visible=False)
+
+        def perform_reverse_search(image_path):
+            return search_relevant_sources(image_path)
+
+        def update_table_row(row, country, denom, year):
+            if country:
+                row[1] = country
+            if denom:
+                row[2] = denom
+            if year:
+                row[3] = year
+            return row
+
+        def trigger_reverse(idx, table):
+            if 0 <= int(idx) < len(table):
+                try:
+                    image_path = table[int(idx)][0]
+                    ebay, colnect, hip, title, query = perform_reverse_search(image_path)
+                    year, country, denom = parse_title(title)
+                    updated_row = update_table_row(list(table[int(idx)]), country, denom, year)
+                    table[int(idx)] = updated_row
                     return (ebay, colnect, hip, title, True, True, True, True, table)
+                except Exception as e:
+                    return (f"❌ Error: {str(e)}", "", "", "No match", True, False, False, False, table)
                 except Exception as e:
                     return (f"❌ Error: {str(e)}", "", "", "No match", True, False, False, False, table)
             return ("❌ Invalid index", "", "", "No match", True, False, False, False, table)
