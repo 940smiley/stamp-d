@@ -429,7 +429,23 @@ year, country, denom = parse_title(title)
                     logging.error(f"Error in gallery reverse search: {str(e)}")
                     return (f"❌ Error: {str(e)}", "", "", "", "", "", "")
                 finally:
-                    session.close()
+def gallery_reverse_search(sid):
+            logging.info(f"Entering gallery_reverse_search with sid: {sid}")
+            if sid:
+                with Session() as session:
+                    try:
+                        stamp = session.query(Stamp).get(int(sid))
+                        if stamp:
+                            logging.info(f"Found stamp with id: {sid}")
+                            ebay, colnect, hip, title, query = search_relevant_sources(stamp.image_path)
+                            year, country, denom = parse_title(title)
+                            logging.info(f"Reverse search completed for stamp id: {sid}")
+                            return (ebay, colnect, hip, title, country, denom, year)
+                    except Exception as e:
+                        logging.error(f"Error in gallery reverse search: {str(e)}")
+                        return (f"❌ Error: {str(e)}", "", "", "", "", "", "")
+            logging.warning("No stamp selected or stamp not found")
+            return ("❌ No stamp selected", "", "", "", "", "", "")
             logging.warning("No stamp selected or stamp not found")
             return ("❌ No stamp selected", "", "", "", "", "", "")
 
