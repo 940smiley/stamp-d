@@ -244,7 +244,17 @@ def upload_and_scan(files: List[Any], progress: gr.Progress | None = None) -> Li
     for f in files:
         safe_filename = secure_filename(os.path.basename(f.name))
         dest = os.path.join(IMAGES_DIR, safe_filename)
-        shutil.copy(f.name, dest)
+for f in files:
+        safe_filename = secure_filename(os.path.basename(f.name))
+        dest = os.path.join(IMAGES_DIR, safe_filename)
+        try:
+            shutil.copy(f.name, dest)
+            paths.append(dest)
+        except (IOError, OSError) as e:
+            logging.error(f"Error copying file {f.name}: {str(e)}")
+    return _scan_paths(paths, progress)
+
+    # Gallery Tab
         paths.append(dest)
     return _scan_paths(paths, progress)
 
