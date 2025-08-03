@@ -29,6 +29,11 @@ implementation focuses on being robust in a variety of environments – if
 optional dependencies are missing the features gracefully degrade.
 """
 
+The UI exposes functionality for scanning stamps using a local Ollama
+model, managing the gallery, exporting data and adjusting settings.  The
+implementation focuses on being robust in a variety of environments – if
+optional dependencies are missing the features gracefully degrade.
+"""
 
 
 # ---------------- Reverse Search ----------------
@@ -130,6 +135,7 @@ def generate_iframes(ebay_url, colnect_url, hipstamp_url):
         f'<iframe src="{hipstamp_url}" width="100%" height="350"></iframe>'
     )
 
+
 def search_relevant_sources(image_path):
     """Run refined searches for eBay sold items, Colnect, HipStamp."""
     if not image_path or not os.path.exists(image_path):
@@ -139,6 +145,7 @@ def search_relevant_sources(image_path):
     ebay_url, colnect_url, hipstamp_url = construct_search_urls(query)
     top_title = scrape_ebay_match(ebay_url)
     ebay_iframe, colnect_iframe, hipstamp_iframe = generate_iframes(ebay_url, colnect_url, hipstamp_url)
+
 
     return (ebay_iframe, colnect_iframe, hipstamp_iframe, top_title, query)
 
@@ -187,6 +194,7 @@ def save_upload(preview_table):
         return f"❌ Error saving stamps: {e}"
     finally:
         session.close()
+
 
 # ---------------- Gallery ----------------
 def load_gallery_data():
@@ -447,6 +455,7 @@ def populate_details(stamp_id):
 # === UI ===
 with gr.Blocks(title="Stamp’d") as demo:
     gr.Markdown("# 📬 Stamp’d — Smart Stamp Cataloging")
+
 
         gallery_table.select(
             lambda evt: load_stamp_details(evt.value[1]),
