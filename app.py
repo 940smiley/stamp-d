@@ -13,7 +13,14 @@ from parsing_utils import parse_title
 # ...existing code...
 def reverse_image_lookup(image_path):
     # Dummy implementation; replace with actual reverse search logic
+from parsing_utils import parse_title
+# ...existing code...
+def reverse_image_lookup(image_path):
+    # TODO: Implement actual reverse image search logic
+    # This function should perform a reverse image search and return relevant results
+    # Consider using libraries like Google Images Search API or TinEye API for implementation
     return f"Reverse search results for {os.path.basename(str(image_path))}" if image_path else "No image provided."
+"""Main Gradio application for Stamp'd.
 """Main Gradio application for Stamp'd.
 
 The UI exposes functionality for scanning stamps using a local Ollama
