@@ -11,7 +11,26 @@ sys.path.insert(0, '/workspace')
 # Import and run the test module
 if __name__ == '__main__':
     # Change to the workspace directory
-    os.chdir('/workspace')
+import unittest
+
+# Add the workspace to the Python path
+try:
+    sys.path.insert(0, '/workspace')
+except Exception as e:
+    print(f"Error adding workspace to Python path: {e}")
+    sys.exit(1)
+
+# Import and run the test module
+if __name__ == '__main__':
+    # Change to the workspace directory
+    try:
+        os.chdir('/workspace')
+    except Exception as e:
+        print(f"Error changing to workspace directory: {e}")
+        sys.exit(1)
+    
+    print("Running all tests...")
+    print("=" * 50)
     
     print("Running all tests...")
     print("=" * 50)
