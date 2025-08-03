@@ -1,3 +1,15 @@
+from __future__ import annotations
+import os
+import requests
+import base64
+from io import BytesIO
+from PIL import Image
+from bs4 import BeautifulSoup
+from db import Session, Stamp
+from image_utils import enhance_and_crop, is_duplicate, classify_image
+from export_utils import export_csv
+from ai_utils import generate_description
+from parsing_utils import parse_titlefrom parsing_utils import parse_title
 # ...existing code...
 def reverse_image_lookup(image_path):
     # Dummy implementation; replace with actual reverse search logic
@@ -10,20 +22,7 @@ implementation focuses on being robust in a variety of environments – if
 optional dependencies are missing the features gracefully degrade.
 """
 
-from __future__ import annotations
 
-
-import os
-import requests
-import base64
-from io import BytesIO
-from PIL import Image
-from bs4 import BeautifulSoup
-from db import Session, Stamp
-from image_utils import enhance_and_crop, is_duplicate, classify_image
-from export_utils import export_csv
-from ai_utils import generate_description
-from parsing_utils import parse_title
 
 # ---------------- Reverse Search ----------------
 def search_relevant_sources(image_path):
@@ -51,7 +50,6 @@ def search_relevant_sources(image_path):
         f'<iframe src="{hipstamp_url}" width="100%" height="350"></iframe>',
         top_title,
         query
-from parsing_utils import parse_title
 
 # ---------------- Reverse Search ----------------
 def construct_search_urls(query):
