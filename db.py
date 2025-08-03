@@ -72,7 +72,34 @@ from image_utils import get_file_hash
                 stamp.file_hash = get_file_hash(stamp.image_path)
         session.commit()
         print(f"✅ Updated {len(stamps_without_hash)} stamps with file hashes")
+Base.metadata.create_all(engine)
+
+def populate_missing_hashes():
+    """Populate file_hash for existing records that don't have it."""
+    from image_utils import get_file_hash
+    from sqlalchemy.exc import SQLAlchemyError  # Import specific exception
+    session = Session()
+    try:
+        stamps_without_hash = session.query(Stamp).filter(Stamp.file_hash.is_(None)).all()
+        for stamp in stamps_without_hash:
+            if stamp.image_path and os.path.exists(stamp.image_path):
+                stamp.file_hash = get_file_hash(stamp.image_path)
+        session.commit()
+        print(f"✅ Updated {len(stamps_without_hash)} stamps with file hashes")
+    except SQLAlchemyError as e:
+        session.rollback()
+        print(f"❌ Database error while populating hashes: {e}")
+    except IOError as e:
+        session.rollback()
+        print(f"❌ File I/O error while populating hashes: {e}")
     except Exception as e:
+        session.rollback()
+        print(f"❌ Unexpected error while populating hashes: {e}")
+    finally:
+        session.close()
+
+if __name__ == "__main__":
+    init_db()
         session.rollback()
         print(f"❌ Error populating hashes: {e}")
     finally:
