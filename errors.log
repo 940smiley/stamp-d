@@ -1,0 +1,28 @@
+2025-07-31 22:31:24.991365 - Created project root folder
+2025-07-31 22:31:24.991365 - Created missing folder: images
+2025-07-31 22:31:24.992364 - Created missing folder: exports
+2025-07-31 22:31:24.992364 - Created missing folder: temp_uploads
+2025-07-31 22:31:24.992364 - ⚡ Created placeholder for missing file: app.py
+2025-07-31 22:31:24.993347 - ⚡ Created placeholder for missing file: db.py
+2025-07-31 22:31:24.995347 - ⚡ Created placeholder for missing file: db_setup.py
+2025-07-31 22:31:24.995347 - ⚡ Created placeholder for missing file: ai_utils.py
+2025-07-31 22:31:24.995347 - ⚡ Created placeholder for missing file: image_utils.py
+2025-07-31 22:31:24.996347 - ⚡ Created placeholder for missing file: export_utils.py
+2025-07-31 22:31:25.011376 - ⚡ Created placeholder for missing file: requirements.txt
+2025-07-31 22:31:25.012363 - ⚡ Created placeholder for missing file: launch_stampd.bat
+2025-07-31 22:31:25.012363 - ⚡ Created placeholder for missing file: launch_stampd_silent.bat
+2025-07-31 22:31:25.012363 - ⚡ Created placeholder for missing file: Quick_Start_Guide.txt
+2025-07-31 22:31:25.013346 - ⚡ Created placeholder for missing file: Quick_Start_Guide.md
+2025-07-31 22:31:25.013346 - ✔ File exists: errors.log
+2025-07-31 22:31:25.013346 - 
+🔍 Checking Python syntax...
+2025-07-31 22:31:25.108366 - ✅ Syntax OK: app.py
+2025-07-31 22:31:25.194388 - ✅ Syntax OK: db.py
+2025-07-31 22:31:25.278365 - ✅ Syntax OK: db_setup.py
+2025-07-31 22:31:25.363358 - ✅ Syntax OK: ai_utils.py
+2025-07-31 22:31:25.449371 - ✅ Syntax OK: image_utils.py
+2025-07-31 22:31:25.534362 - ✅ Syntax OK: export_utils.py
+2025-07-31 22:31:25.535374 - ⚡ Creating DB via db_setup.py...
+2025-07-31 22:31:25.709378 - ⚡ No images found. Added placeholder sample stamp.
+2025-07-31 22:31:25.709378 - ✅ Verification completed successfully.
+2025-07-31 22:31:25.709378 - 🚀 Launching Stamp'd app...

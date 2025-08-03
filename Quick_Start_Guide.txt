@@ -1,0 +1,67 @@
+
+STAMP’D - QUICK START GUIDE (TXT VERSION)
+
+1. SETUP
+---------
+- Make sure you have Python 3.11+ installed.
+- Navigate to your project directory (e.g., G:\stamp-d).
+- Create a virtual environment (optional but recommended):
+    python -m venv gradio-env
+    gradio-env\Scripts\activate
+- Install all dependencies:
+    pip install -r requirements.txt
+
+2. LAUNCH THE APP
+------------------
+- Run the app:
+    python app.py
+- The app will launch in your browser at:
+    http://127.0.0.1:7860
+
+3. USING THE APP
+-----------------
+- Upload Mode:
+    - Click “Upload” to add new stamp images.
+    - Fill out details manually or use AI tools.
+    - Click “Save & Refresh Gallery”.
+
+- Sync Mode:
+    - Place images in the /images directory.
+    - Click “Sync & Autofill” to load them.
+    - Complete missing fields in the gallery.
+
+- Gallery View:
+    - Inline editing supported.
+    - Click “Reverse Image Search” for references.
+    - Click “Export” for Excel, CSV, or JSON.
+
+4. SETTINGS
+------------
+- Enable/disable AI features.
+- Set model preferences (Phi-3, LM Studio fallback).
+- API key inputs for external marketplace integrations.
+
+5. TROUBLESHOOTING
+-------------------
+- If the app fails to launch:
+    - Check Python version
+    - Ensure dependencies are installed
+
+- If images don’t display:
+    - Confirm correct folder path
+    - Check console for errors
+
+6. ADDITIONAL FEATURES
+-----------------------
+- Auto-lot assignment, thumbnails, tag filtering
+- Marketplace listing status
+- Offline mode support
+- Configurable sharing & export options
+
+7. SUPPORT
+-----------
+- Logs are available in `errors.log`
+- Backups are in /backups
+- Refer to PDF guide or contact support for issues
+
+Happy Cataloging!

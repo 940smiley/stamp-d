@@ -274,6 +274,7 @@ function applySavedOrder() {
     });
   }
 
+
   const mode = localStorage.getItem('layout_mode') === '1';
   const toggle = document.getElementById('layout_toggle');
   if (toggle) {

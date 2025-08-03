@@ -1,0 +1,13 @@
+gradio==4.26.0
+pytesseract
+Pillow
+numpy
+openpyxl
+watchdog
+requests
+matplotlib
+scikit-image
+jinja2
+ollama
+fpdf2
+SQLAlchemy

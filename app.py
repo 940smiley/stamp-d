@@ -1,4 +1,18 @@
-import gradio as gr
+# ...existing code...
+def reverse_image_lookup(image_path):
+    # Dummy implementation; replace with actual reverse search logic
+    return f"Reverse search results for {os.path.basename(str(image_path))}" if image_path else "No image provided."
+"""Main Gradio application for Stamp'd.
+
+The UI exposes functionality for scanning stamps using a local Ollama
+model, managing the gallery, exporting data and adjusting settings.  The
+implementation focuses on being robust in a variety of environments – if
+optional dependencies are missing the features gracefully degrade.
+"""
+
+from __future__ import annotations
+
+
 import os
 import requests
 import base64
@@ -227,9 +241,15 @@ def trigger_reverse(idx, table):
                      ebay_frame, colnect_frame, hipstamp_frame, suggested_title, preview_table]
         )
 
-        save_status = gr.Textbox(label="Save Status")
-        save_btn = gr.Button("💾 Save All")
-        save_btn.click(save_upload, preview_table, save_status)
+def upload_and_scan(files: List[Any], progress: gr.Progress | None = None) -> List[Dict[str, Any]]:
+    """Handle uploaded files and return scanned metadata."""
+    paths = []
+    for f in files:
+        safe_filename = secure_filename(os.path.basename(f.name))
+        dest = os.path.join(IMAGES_DIR, safe_filename)
+        shutil.copy(f.name, dest)
+        paths.append(dest)
+    return _scan_paths(paths, progress)
 
     # Gallery Tab
     with gr.Tab("📋 Gallery"):
@@ -306,15 +326,17 @@ suggested_title_g = gr.Textbox(label="Top eBay Match Title", visible=False)
                          [stamp_id, country_edit, denom_edit, year_edit, notes_edit],
                          update_status)
 
-        gallery_images = gr.Gallery(show_label=False, columns=5)
+
+def populate_details(stamp_id):
+    return get_stamp_by_id(stamp_id)
 
         def toggle_views(view_mode):
             return (gr.update(visible=(view_mode == "Table View")),
                     gr.update(visible=(view_mode == "Images Only")))
 
-        view_switch.change(toggle_views, view_switch, [gallery_table, gallery_images])
-        refresh_btn.click(load_gallery_data, outputs=gallery_table)
-        refresh_btn.click(load_gallery_images, outputs=gallery_images)
+# === UI ===
+with gr.Blocks(title="Stamp’d") as demo:
+    gr.Markdown("# 📬 Stamp’d — Smart Stamp Cataloging")
 
         gallery_table.select(
             lambda evt: load_stamp_details(evt.value[1]),
@@ -334,3 +356,4 @@ suggested_title_g = gr.Textbox(label="Top eBay Match Title", visible=False)
         export_btn.click(export_data, outputs=export_status)
 
 demo.launch()
+
