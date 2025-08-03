@@ -46,7 +46,16 @@ def generate_thumbnail(image_path):
     try:
         img = Image.open(image_path)
         img.thumbnail(THUMB_SIZE)
-        thumb_path = os.path.join(
+try:
+        img = Image.open(image_path)
+        img.thumbnail(THUMB_SIZE)
+        # Import os.path for secure path handling
+        # Import secure_filename for sanitizing filenames
+        thumb_filename = secure_filename(os.path.basename(image_path))
+        thumb_path = os.path.join(TEMP_UPLOADS, f"thumb_{thumb_filename}")
+        img.save(thumb_path)
+        return f"<img src='{thumb_path}' width='50'/>"
+    except Exception:
             TEMP_UPLOADS, f"thumb_{os.path.basename(image_path)}"
         )
         img.save(thumb_path)
